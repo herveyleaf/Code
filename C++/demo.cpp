@@ -11,6 +11,6 @@ int main(){
     char b = {a};
     char{a};
     char c = char(128);
-    cout << c;
+    cout << "hello";
     return 0;
 }
