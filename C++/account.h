@@ -15,11 +15,11 @@ public:
     void settle(const Date& date);
     void show() const;
 private:
-    std::string id;         //账号
-    double balance;         //余额
-    double rate;            //年利率
-    Date lastDate;          //上次变更余额日期
-    double accumulation;    //余额按日累加
+    std::string id;
+    double balance;
+    double rate;
+    Date lastDate;
+    double accumulation;
     static double total;
     void record(const Date& date, double amount, const std::string& desc);
     void error(const std::string& msg) const;
