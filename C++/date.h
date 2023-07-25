@@ -2,7 +2,7 @@
 #define __DATE_H__
 class Date{
 public:
-    Date(int year, int month, int date);
+    Date(int year, int month, int day);
     int getYear() const {return year;}
     int getMonth() const {return month;}
     int getDay() const {return day;}
