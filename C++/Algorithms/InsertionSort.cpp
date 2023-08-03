@@ -2,7 +2,7 @@
 #include "InsertionSort.h"
 using namespace std;
 
-void insertion_sort(vector<double> &nums){
+int insertion_sort(vector<double> &nums, double x){
     int length = nums.size();
     for(int j = 1; j < length; j++){
         int key = nums[j];
@@ -13,4 +13,11 @@ void insertion_sort(vector<double> &nums){
         }
         nums[i + 1] = key;
     }
+    int k = 0;
+    while(nums[k] != x && k < length)
+        k++;
+    if(k == length)
+        return -1;
+    else
+        return k;
 }

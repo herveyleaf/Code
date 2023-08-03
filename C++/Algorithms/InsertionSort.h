@@ -1,4 +1,4 @@
 #include <vector>
 using namespace std;
 
-void insertion_sort(vector<double>& nums);
+int insertion_sort(vector<double>& nums, double x);
