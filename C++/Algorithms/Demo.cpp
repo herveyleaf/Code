@@ -8,5 +8,6 @@ int main(){
     cout << "x = nums[" << insertion_sort(test, x) << "]\n";
     for(double x : test)
         cout << x << ' ';
+    cout << '\n';
     return 0;
 }
