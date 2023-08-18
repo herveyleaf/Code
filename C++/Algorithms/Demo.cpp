@@ -1,13 +1,13 @@
 #include <iostream>
-#include "InsertionSort.h"
+#include "MergeSort.h"
 using namespace std;
 
 int main(){
-    vector<double> test = {5, 2, 4, 6, 1, 3};
-    double x = 6;
-    cout << "x = nums[" << insertion_sort(test, x) << "]\n";
-    for(double x : test)
-        cout << x << ' ';
+    int test[] = {2, 4, 5, 7, 1, 2, 3, 6, 9, 8};
+    int length = sizeof(test) / sizeof(test[0]);
+    merge_sort(test, 0, length - 1);
+    for(int x = 0; x < length; x++)
+        cout << test[x] << ' ';
     cout << '\n';
     return 0;
 }
