@@ -1,36 +1,44 @@
 #include <iostream>
 using namespace std;
 
-int getPower(int x, int y){
-    int ret = 1;
-    if(x == 1){
-        return ret;
+class Point{
+public:
+    Point(int x = 0, int y = 0) : x(x), y(y){
+        count++;
     }
-    else{
-        for(y; y > 0; y--)
-        ret *= x;
+    Point(Point &p){
+        x = p.x;
+        y = p.y;
+        count++;
     }
-    return ret;
-}
+    ~Point(){
+        count--;
+    }
+    int getX(){
+        return x;
+    }
+    int getY(){
+        return y;
+    }
+    void showCount(){
+        cout << "Count = " << count << endl;
+    }
+private:
+    int x, y;
+    static int count;
+    constexpr static int origin = 0;
+};
 
-double getPower(double x, int y){
-    double ret = 1;
-    if(x == 1){
-        return ret;
-    }
-    else{
-        for(y; y > 0; y--)
-        ret *= x;
-    }
-    return ret;
-}
+int Point::count = 0;
+constexpr int Point::origin;
 
 int main(){
-    int a, c;
-    double b;
-    cout << "input:";
-    cin >> a >> b >> c;
-    cout << "int:" << getPower(a, c) << endl;
-    cout << "double:" << getPower(b, c) << endl;
+    Point a(4, 5);
+    cout << "Point A: " << a.getX() << ", " << a.getY() << endl;
+    a.showCount();
+
+    Point b(a);
+    cout << "Point B: " << b.getX() << ", " << b.getY() << endl;
+    b.showCount();
     return 0;
 }
