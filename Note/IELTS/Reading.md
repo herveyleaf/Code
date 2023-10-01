@@ -35,3 +35,13 @@ to read a text quickly to find specific information
 - grammar
     - agreement of subject and predicate
     - collocation
+
+### Paraphrases
+- Semantic Paraphrases
+    - synonym
+    - homoionym
+    - derivative words
+    - antonym
+    - superordinate
+    - hyponym
+- Syntactic Paraphrases
