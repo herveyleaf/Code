@@ -3,42 +3,33 @@ using namespace std;
 
 class Point{
 public:
-    Point(int x = 0, int y = 0) : x(x), y(y){
-        count++;
+    Point() : x(0), y(0){
+        cout << "Default Constructor called." << endl;
     }
-    Point(Point &p){
-        x = p.x;
-        y = p.y;
-        count++;
+    Point(int x, int y) : x(x), y(y){
+        cout << "Constructor called" << endl;
     }
     ~Point(){
-        count--;
-    }
-    int getX(){
-        return x;
-    }
-    int getY(){
-        return y;
-    }
-    void showCount(){
-        cout << "Count = " << count << endl;
+        cout << "Destructor called." << endl;
+    }   
+    int getX() const{return x;}
+    int getY() const{return y;}
+    void move(int newX, int newY){
+        x = newX;
+        y = newY;
     }
 private:
     int x, y;
-    static int count;
-    constexpr static int origin = 0;
 };
 
-int Point::count = 0;
-constexpr int Point::origin;
-
 int main(){
-    Point a(4, 5);
-    cout << "Point A: " << a.getX() << ", " << a.getY() << endl;
-    a.showCount();
+    cout << "Step one: " << endl;
+    Point *ptr1 = new Point;
+    delete ptr1;
 
-    Point b(a);
-    cout << "Point B: " << b.getX() << ", " << b.getY() << endl;
-    b.showCount();
+    cout << "Step two: " << endl;
+    ptr1 = new Point(1, 2);
+    delete ptr1;
+
     return 0;
 }
