@@ -67,3 +67,66 @@ alter table r add A D;
 r是现有关系的名字，A是待添加属性的名字，D是待添加属性的域  
 alter table r drop A;  
 从关系中去掉属性，r是现有关系的名字，A是关系的一个属性的名字
+
+## SQL查询的基本结构
+
+SQL查询的基本结构由三个子句构成：select、from和where。查询的输入是在from子句中列出的关系，在这些关系上进行where和select子句中指定的运算，然后产生一个关系作为结果
+
+### 单关系查询
+
+select 属性  
+from 关系
+
+eg：  
+select name  
+from instructor;
+
+因为一个关系中，同名的属性可以出现不止一次，所以可以通过在select后加入关键词distinct来强行删除重复，而关键词all可以用来显式指明不去除重复。select子句还可带有+、-、*、/运算符的算数表达式，运算对象可以是常数或者元组的属性，但这种运算不会对关系产生任何改变
+
+where子句允许我们选出在from子句的结果关系中满足特定谓词的元组，并且where子句中可以使用逻辑连词and、or和not，逻辑连词的运算对象可以是包含运算符<、<=、>、>=、=和<>的表达式
+
+### 多关系查询
+
+select A1, A2, ..., An  
+from r1, r2, ..., rm  
+where P;
+
+每个Ai代表一个属性，每个ri代表一个关系，P是一个谓词。如果省略where子句，则谓词P为true，就会输出笛卡儿积。在可能出现相同的属性名前加上关系名作为前缀，表示该属性来自于哪个关系；对于那些只出现在单个模式中的属性，通常去掉关系名前缀
+
+通常来说，一个SQL查询的含义可以理解为：
+
+1. 为from子句中列出的关系产生笛卡儿积
+2. 在步骤1的结果上应用where子句中指定的谓词
+3. 对于步骤2结果中的每个元组，输出select子句中指定的属性
+
+### 自然连接
+
+自然连接运算作用于两个关系，并产生一个关系作为结果。不同于两个关系上的笛卡儿积，它将第一个关系的每个元组与第二个关系的所有元组都进行连接；自然连接只考虑那些在两个关系模式中都出现的属性上取值相同的组对
+
+结果关系不会重复列出那些在两个关系模式中都出现的属性。属性列出的顺序是：先是两个关系模式中的共同属性，然后是那些只出现在第一个关系模式中的属性，最后是那些只出现在第二个关系模式中的属性
+
+对于SQL查询：  
+select name, course_id  
+from instructor, teaches  
+where instructor.ID = teaches.ID;  
+可以写成：  
+select name, course_id  
+from instructor natural join teaches;
+
+自然连接运算的结果是关系，从概念上讲，from子句中的"instructor natural join teaches"表达式可以替换成执行该自然连接后所得到的关系，然后再这个关系上执行where和select子句。  
+所以，在一个SQL查询的from子句中，可以用自然连接将多个关系结合在一起，如：  
+select A1, A2, ..., An
+from r1 natural join r2 natural join ... natural join rm  
+where P;
+
+为了发扬自然连接的优点，同时避免不必要的想等属性带来的危险，SQL提供了一种自然连接的构造形式，允许用户来指定需要哪些列相等。例如：  
+select name, title  
+from (instructor natural join teaches) join course using (course_id);
+
+join ... using运算中需要给定一个属性名列表，其两个输入中都必须具有指定名称的属性。  
+r1 join r2 using(A1, A2)，与r1和r2的自然连接类似，只不过在t1.A1 = t2.A1并且t1.A2 = t2.A2成立的前提下，来自r1的元组t1和来自r2的元组t2就能匹配，即使r1和r2都具有名为A3的属性，也不需要t1.A3 = t2.A3成立
+
+## 附加的基本运算
+
+### 更名运算
+
