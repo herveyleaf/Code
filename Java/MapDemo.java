@@ -22,7 +22,7 @@ public class MapDemo {
         }
         TreeMap<String, String> TreeMap = new TreeMap<String, String>(hashMap);
         System.out.println("\nTreeMap实现的Map是按字符串升序排序的");
-        keys = hashMap.keySet();
+        keys = TreeMap.keySet();
         it = keys.iterator();
         while(it.hasNext()){
             String key = it.next();
