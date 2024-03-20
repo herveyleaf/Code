@@ -1,16 +1,20 @@
 # Computer Science
 
+## Learning Pathway
+
+### Stage 1
+
+Berkeley CS61A, Stanford CS106X, MIT 6.006, MIT 18.06
+
+### Stage 2
+
+Stanford CS107 / CMU 15-213, Berkeley CS61C, MIT 6.046, Berkeley CS70
+
+### Stage 3
+
+Stanford CS110, Berkeley CS162
+
 ## Programming Language
-
-Stanford CS106X Programming Abstractions in C++
-
-- Video
-
-    https://www.youtube.com/watch?v=pOyyGQU_ErA&list=PLoCMsyE1cvdVmbGH6Jp-9twXPbi5J_IBT&index=1&ab_channel=LectureArchive
-
-- Resource
-
-    https://web.stanford.edu/class/cs106x/index.html
 
 Berkeley CS61A Structure and Interpretation of Computer Programs
 
@@ -21,6 +25,16 @@ Berkeley CS61A Structure and Interpretation of Computer Programs
 - Resource
 
     https://inst.eecs.berkeley.edu/~cs61a/su20/
+
+Stanford CS106X Programming Abstractions in C++
+
+- Video
+
+    https://www.youtube.com/watch?v=pOyyGQU_ErA&list=PLoCMsyE1cvdVmbGH6Jp-9twXPbi5J_IBT&index=1&ab_channel=LectureArchive
+
+- Resource
+
+    https://web.stanford.edu/class/cs106x/index.html
 
 ## Data Structures and Algorithms
 
@@ -79,6 +93,42 @@ Berkeley CS61C Great Ideas in Computer Architecture
 - Resource
 
     https://inst.eecs.berkeley.edu/~cs61c/su20/
+
+## Computer System
+
+Stanford CS107 Computer Organization & Systems  
+OR  
+CMU 15-213 Introduction to Computer Systems
+
+- pre
+
+    Stanford CS106X
+
+- Video
+
+    https://www.youtube.com/watch?v=xuRkyNqqecc&list=PLoCMsyE1cvdWivlV-39KKsBKUX-4DvraN&index=1&ab_channel=LectureArchive
+
+    OR
+
+    https://www.youtube.com/watch?v=ScMxnXq6fbI&list=PLcQU3vbfgCc9sVAiHf5761UUApjZ3ZD3x&ab_channel=RobbieZhou
+
+- Resource
+
+    https://web.stanford.edu/class/cs107/
+
+    OR
+
+    https://www.cs.cmu.edu/~213/schedule.html
+
+Stanfor CS110 Principles of Computer Systems
+
+- Video
+
+    https://www.bilibili.com/video/BV1ED4y1R7RJ/?vd_source=0994c6808a8889a277a4ea73661bc42b
+
+- Resource
+
+    https://pan.baidu.com/s/157akxCiMyjXDBO7_bZfJbw
 
 ## Operating System
 
