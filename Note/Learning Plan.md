@@ -30,7 +30,7 @@ Stanford CS106X Programming Abstractions in C++
 
 - Video
 
-    https://www.youtube.com/watch?v=pOyyGQU_ErA&list=PLoCMsyE1cvdVmbGH6Jp-9twXPbi5J_IBT&index=1&ab_channel=LectureArchive
+    https://www.youtube.com/watch?v=gLKakaNoCk0&ab_channel=MartySteppCS106CS193StanfordArchive
 
 - Resource
 
