@@ -1,13 +1,13 @@
 {
     "configurations": [
       {
-        "name": "Linux",
+        "name": "GCC",
         "includePath": ["${workspaceFolder}/**"],
-        "defines": [],
-        "compilerPath": "/usr/bin/gcc",
-        "cStandard": "c11",
+        "defines": ["_DEBUG", "UNICODE", "_UNICODE"],
+        "compilerPath": "D:\\MSYS2\\ucrt64\\bin\\gcc.exe",
+        "cStandard": "c17",
         "cppStandard": "c++17",
-        "intelliSenseMode": "clang-x64"
+        "intelliSenseMode": "windows-gcc-x64"
       }
     ],
     "version": 4
