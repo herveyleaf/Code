@@ -51,3 +51,87 @@ ufunc有两种，Unary ufuncs，只有一个输入；Binary ufuncs，有两个�
 numpy也可以使用python内置的绝对值函数，或 **np.absolute()** ，也可以简写为 **np.abs()** ，numpy还提供许多有用的ufuncs，比如三角函数和反三角函数 **np.sin() np.cos() np.tan() np.arcsin() np.arccos np.arctan()** ，还有指对数函数 **np.exp() np.exp2() np.power() np.log() np.log2()** ，对于对数函数，np.power()在计算非常小的数字的时候精确度不如np.exp()
 
 numpy有许多许多的ufuncs，可以通过scipy.special来导入许多不常用的数学计算函数
+
+对于所有ufuncs，都可以在函数内指定参数out来指定数据存储的位置
+
+对于二元ufuncs，aggregations可以直接作用于这些计算上
+
+reduce()函数代表作累积操作，accumulate()函数代表作累计操作，并且把每一步的过程给打印出来，对于这些操作，ufuncs不是进行vectorized计算，也就是说ufuncs不全是向量化操作
+
+对于所有ufuncs，可以用outer()函数将每个单独的element进行配对并计算，即遍历所有组合
+
+# Computation on Arrays Aggregates
+
+numpy内置了所有聚合操作，包括求和、最大最小值、均值和方差，比python原生的操作快得多，可以用axis参数指定行或列(只考虑二维)
+
+# Computation on Arrays Broadcasting
+
+对于相同size的数组，numpy的二元操作是element-by-element的，对于标量，numpy会把常数给展开成相同size的数组，对于两个不同size的一维数组，会展开成二维数组
+
+## Rule of Broadcasting
+
+如果两个数组的维度数量不同，那么维度较少的数组将会复制leading side(left-side)维度的数据将维度数量补齐，如果只有一个1维的数组，要补齐成2维，将用这1维的1行数据复制出多行补齐；如果某一维度的数据不匹配，若这一维度的shape为1，那么会用这1行/1列的数据去stretch来match shape，如果任何一个维度的size有不同，并且都不为1(即不能stretch)，那么就报错
+
+# Boolean Array and Masks
+
+## Comparison
+
+<, >, ==, !=, <=, >=六种比较运算都可以进行向量化的运算，不用通过循环来遍历整个数组，比较结果是boolean类型的数组
+
+可以通过np.count_nonzero()函数来计算比较值为True的数量，如np.count_nonzero(x < 6)，另一种方法就是用np.sum()函数来累加计算，而使用sum()函数的一个优点就是可以指定维度，比如计算每一行或每一列的满足条件的数量
+
+用np.any()函数和np.all()函数可以检查是否全为True或是否有一个为True，这两个函数也可以指定维度
+
+## Boolean Operators
+
+python有内置的位运算操作符&, |, ^, ~，这些运算符在numpy中进行了重载，变成了对于数组的element-wise的逻辑运算操作符
+
+这些运算符的优先级高于>, <等比较运算符号，所以进行逻辑运算时要注意使用括号
+
+python内置的and和or等逻辑运算符是将操作数当作一个整体，而&, |等位运算符是将操作数分解成最小的个体(二进制的位)来按位运算，所以重载到numpy中，位运算符便是对数组中的每个最小个体(即元素)进行操作，而对numpy数组进行and和or的运算，便是将数组作为整体进行比较
+
+## Boolean Array as Masks
+
+对于一个数组，我们可以得到它对于某个条件的是否满足的逻辑数组，如x < 5，还可以用x[x < 5]来得到一个一维的数组，其所有值都满足比较运算的条件，然后我们就可以对这些满足条件的数据做某些操作
+
+# Fancy Indexing
+
+可以通过传递一组数组indices来访问数组中的元素，这种方法被称为fancy或者vectorized indexing，可以允许我们访问和修改复杂的子数组
+
+## Exploring Fancy Indexing
+
+当传递array作为index时，index的shape决定了获取的子数组的shape，而不是原数组的shape，传递的index数组也服从broadcasting rules
+
+## Combined Indexing
+
+可以将fancy index和simple index混合使用，会进行broadcasting；可以将fancy index和slice结合，比如x[1:, [2, 0, 1]]；可以将fancy index和masking结合，这样将只选取mask数组对应为True的元素
+
+## Modifying Values with Fancy Indexing
+
+通过fancy indexing赋值时，这不是一个vectorized操作，而是根据index array的顺序逐个赋值，比如x[[0, 0]] = [4, 6]，那么x[ 0 ]最终将等于6。对于x[ i ] += 1，最后的值并不会累加起来，因为对于这种简写，实际上是x[ i ] = x[ i ] + 1，而x[ i ] + 1在最初就已经赋好值了。如果想进行累积操作，需要使用at()函数，如np.add.at(x, i, 1)
+
+# Sorting
+
+## Sorting Arrays
+
+np.sort()函数可以对数组进行更快的排序，相较于python原生的排序函数来说，如果对数组直接进行操作，如x.sort()，将会改变原数组的值的顺序，这个函数可以通过axis参数指定轴
+
+np.argsort()将会返回排序后相对于原数组的index数组
+
+np.partition(array, k)函数可以将函数最小的前k个值移到最前，剩余的数不保证排序，最前的k个值也不保证排序，只保证他们是所有值中最小的k个，这个函数可以通过axis参数指定轴
+
+np.argpartition()可以返回原数组经过partition后的index，是完整的index array
+
+# Structured Data
+
+## Structured Arrays
+
+可以通过对ndarray的列命名和声明构建一个结构化的array，比如data = np.zeros(4, dtype = {'names':('name', 'age', 'weight'), 'formats':('U10', 'i4', 'f8')})，这样就可以通过data[ 'name' ]这样来访问列，以上是通过字典形式来声明，也可以使用列表形式，如np.dtype([('name', 'S10'), ('age', 'i8'), ('weight', 'f4')])
+
+## Compound Types
+
+在声明数据类型的时候，可以在第3个参数位置来声明shape，形成一列中的每个数据又是一个ndarray
+
+## Record Arrays
+
+可以通过np.recarray来将结构化数组的列名作为array的属性，比如data_rec = data.view(np.recarray)，假如data有age列，不使用该方法，要访问age列就要data[ 'age' ]，使用该方法可以data.age这样访问，但是record array访问的速度比原生访问方法要慢

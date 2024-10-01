@@ -130,3 +130,206 @@ agg()函数是聚合函数，将多个函数的执行结果聚合到一起
     对于众数的数量不同，有单峰分布、双峰分布、三峰分布，对于图像的形态，有正态分布、偏态分布等等
 
     对于偏态分布，如果数据分布的图像中右边的观测值较少，称为正偏态分布，如果左边的观测值较少，称为负偏态分布
+
+# More Statistics
+
+## Correlation Analysis
+
+chi-square test
+
+χ^2 = Σ((Oi - Ei)^2 / Ei)
+
+null hypothesis是两个变量是独立的，对χ^2值贡献最大的cell与期望的差距非常大，χ^2越大，那么变量相关的可能性越高
+
+degree of freedom是指可以随意改变的、不受限制的变量，对于a + b = 6，那么自由度为1，因为一旦一个变量确定了，另一个变量就也确定了
+
+## Variance and Covariance
+
+### Variance
+
+平方的期望E(x^2)是Σ(x^2)*p，方差的公式是E(x^2) - E(x)^2
+
+### Covariance
+
+协方差的公式是E(x1x2) - E(x1)*E(x2)
+
+如果x1和x2是相互独立的，那么协方差σ12=0，但协方差等于0不代表x1和x2相互独立
+
+## Correlation
+
+相关度的公式是ρ12 = σ12 / (σ1 * σ2)
+
+如果相关度大于0，那么x1和x2正相关，如果小于0则负相关，等于0时则相互独立
+
+## Covariance Matrix
+
+## Graphic Display
+
+### Boxplot
+
+Box代表数据的中间50%，即Q1到Q3的范围，Box内部的线表示Median(Q2)；Whiskers是从Box延伸出来的两条线，分别延伸至数据集的最大值和最小值，但不包括Outliers，Outliers是落在Box外的单独点，定义为超过Q1-1.5IQR或者Q3+1.5IQR的值
+
+### Histogram
+
+直方图显示列表形式的频率，图像类似柱状图，histogram和bar chart的区别是histogram被用于表现一个变量的值的分布，而bar图用于比较不同变量；histogram
+
+histogram通常展现比boxplot更多的信息，因为对于两组数据，它们可能有同样的min,Q1,median,Q3,max，这样画出来的boxplot就是一样的，但是它们的分布可能不一样
+
+### Quantile Plot
+
+将所有百分位的数据画出来
+
+### Quantile-Quantile Plot
+
+两个轴为两组数据的百分位，进行对照
+
+### Scatter plot
+
+散点图
+
+# Similarity Matrix
+
+## Motivation
+
+Patter Mining, Clusting, Outlier Detection
+
+## Dissimilarity
+
+Dissimilarity(Distance) matrix是用来衡量两个数据之间的距离d(i,j)，且d(i,j) = d(j, i)
+
+### Numeric Distance Metrics
+
+- Manhattan distance：不同维度的直线距离的绝对值相加，即|xi1 - xj1| + ... + |xil - xjl|
+- Euclidean distance：欧氏距离，根号下不同维度直线距离的平方之和
+
+### Standardizing Numeric Data
+
+Z-score：z = (x - μ) / σ
+
+x是待处理的原始数据，μ是均值，σ是标准差，标准化的目的是让所有维度的数据都处在同一衡量尺度下，避免某一维度数据巨大导致距离的权重失衡
+
+### Proximity Measure
+
+#### Binary
+
+sum of (1-1) = q, (1, 0) = r, (0, 1) = s, (0, 0) = t
+
+对于对称数据来说，d(i,j) = (r + s) / (q + r + s + t)
+
+对于不对称数据来说，d(i,j) = (r + s) / (q + r + s)，去掉了(0, 0)这个over-represented的数据，如果是(1, 1)这个数据over-represented的话，那就去掉q
+
+对于不对称数据的的相似性，sim(i,j) = q / (q + r + s)，也是去掉了(0, 0)这个数据，但不是因为over-represented
+
+对于一组数据，计算公式要选同一个，不能因为某些数据对是对称的/不对称的，就更换计算公式
+
+#### Categorial
+
+也叫做nominal类型
+
+1. Simple matching
+
+    m：匹配的变量的数量，p：变量的总数量
+
+    d(i,j) = (p - m) / p
+
+    对于单个变量之间的距离，相同就是1，不相同就是0
+
+2. One-hot encoding
+
+#### Ordinal
+
+将ordinal变量根据rank排序进行1 2 3 ... M的编号，然后通过zif = (rif - 1) / (Mf - 1)将其映射在0到1的范围内，这样一个类型的变量，各个值之间的距离就可以计算出来，再通过计算numerical类型的方法来计算
+
+#### Mixed
+
+d(i,j) = (∑ δij * dij) / ∑ δij
+
+其中δ的值为0或1，若数据i和j在某一个变量缺少值，即不能计算距离，那么就取0，如果可以计算距离，就取1，而d就是某个变量之间的距离，根据变量的类型来选择计算公式
+
+### Cosine Similarity
+
+计算两个向量之间的cosine值，cos(d1, d2) = (d1 · d2) / ||d1|| × ||d2||
+
+# Data Normalization
+
+## Min-Max Normalization
+
+将原数据的范围转换为[new_min, new_max]
+
+假设原数据为v，公式是v' = (v - min) * (new_max - new_min) / (max - min) + new_min
+
+## Z-score Normalization
+
+公式为v' = (v - μ) / σ，其中μ是均值，σ是标准差
+
+## Normalization by Decimal Scaling
+
+v' = v / 10^j
+
+根据需要将原数据的范围转换到-1到1
+
+# Dimension Reduction
+
+有两种数据降维方法
+
+- Feature selection：找到一个可以保留大部分信息的数据子集
+- Feature extraction：将数据从原本的高维度转换到更少维度
+
+## PCA
+
+PCA的目标是在保证最重要的信息保留的情况下减少变量数，即维数
+
+通过构建新的PCA变量来获取原数据的关键信息，构建的方法是
+
+- 原变量的线性组合
+- 根据重要性的程度来进行排序
+
+### Steps
+
+1. Normalize Data：将数据转换为统一范围，避免过大的数值导致重要性失衡
+2. Compute Principal Components：找到k个保留最多原数据信息的正交的向量
+3. Sort Principal Components：重要性最高的component表示保留了最多的信息量，第二高的表示保留了第二多的信息量，以此类推
+4. Reduce Data：舍去保留较少信息的components，用剩余的components来描述数据信息
+
+## Attribute Subset Selection
+
+目标是通过减少无关或冗余的属性来降低数据的维数
+
+但是选择合适的属性是十分耗费时间的，尤其是在对数据没有太多了解时，并且使用错误的属性会导致数据挖掘的低质和低效
+
+一般通过heurisic methods，即试探法来选择good sbuset，并且可能得到全局最优解
+
+### Decision Tree
+
+可以通过决策树来选取所需的属性
+
+从所有数据的根节点开始，选取best attribute来将原数据切分成一个子集，best通常表示这个属性可以很好的区分不同的类别，重复这个步骤，直到遍历了决策树的所有结论
+
+对于一个决策树，任何一个出现在其中的属性都是与你的任务相关的，没有出现在决策树当中的属性被认为是不相关的
+
+#### Steps
+
+1. Load the Data
+2. Preprocessing：处理缺失值，对类别型变量进行编码
+3. Decision Tree：基于数据集训练一个decision tree model
+4. Feature Importance：从训练出的决策树模型中导出各个属性的重要性
+5. Subset Selection：基于属性的重要性来选择subset
+
+## Nonlinear Dimensionality Reduction Methods
+
+PCA是一种线性的降维方法，每一个principal component是原数据的属性的线性组合，对于线性不可分的数据集，PCA对其不起作用
+
+### General Steps for Nonlinear Methods
+
+1. Constructing Proximity Matrix：建立一个临近度矩阵来计算每个数据点与其他数据点的相似性
+2. 根据这个临近度矩阵来创建一个新的、维数更低的representation，这个新的representation应当尽可能的保持原数据的关系，即临近度
+
+### KPCA and SNE
+
+- KPCA(Kernel PCA)
+    - 用一个kernel function来计算每一对数据点之间的相似度
+    - 在计算结束后，KPCA试图在一个低维的空间维持这个相似度
+
+- SNE(Stochastic Neighbor Embedding)
+    - 通过其他方法建立临近度矩阵
+    - 类似KPCA，SNE也将在一个低维的空间维持这个临近度
