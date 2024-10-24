@@ -206,13 +206,15 @@ Dissimilarity(Distance) matrix是用来衡量两个数据之间的距离d(i,j)�
 
 Z-score：z = (x - μ) / σ
 
+min-max：y = ((x - min)/(max - min)) * (new_max - new_min) + new_min
+
 x是待处理的原始数据，μ是均值，σ是标准差，标准化的目的是让所有维度的数据都处在同一衡量尺度下，避免某一维度数据巨大导致距离的权重失衡
 
 ### Proximity Measure
 
 #### Binary
 
-sum of (1-1) = q, (1, 0) = r, (0, 1) = s, (0, 0) = t
+sum of (1, 1) = q, (1, 0) = r, (0, 1) = s, (0, 0) = t
 
 对于对称数据来说，d(i,j) = (r + s) / (q + r + s + t)
 
@@ -333,3 +335,101 @@ PCA是一种线性的降维方法，每一个principal component是原数据的�
 - SNE(Stochastic Neighbor Embedding)
     - 通过其他方法建立临近度矩阵
     - 类似KPCA，SNE也将在一个低维的空间维持这个临近度
+
+# Pattern Mining
+
+## Basic Concepts
+
+patterns是某些item在数据集中经常同时出现，patterns是datasets固有的、重要的属性，是itemset
+
+- itemset是一个含有1个或多个items的集合，比如I = {I1, I2, ..., Im}
+- k-itemset是一个含有k个items的集合
+- absolute support(count)是一个itemset X在数据集中出现的次数，比如sup{X} = 3，即X在数据集中出现3次
+- relative support是itemset X在数据集中出现的比例，比如s{X} = 60%，即60%的数据中都包含X
+- frequent itemsets(patterns)，如果一个itemset的support不小于minsup threshold σ，那么这个itemset就是frequent itemset，比如如果σ = 50%，那么support大于等于50%的都是frequent itemset
+- association rules，表示A -> B，即A会导致B发生
+    - confidence，即条件概率，c = sup(X, Y) / sup(X)
+
+association rule mining的步骤有两步
+1. 找到所有的frequent itemsets，这一步的计算量非常大，这种mining的性能由这一步决定
+2. 根据frequent itemsets生成strong association rules，要满足minsup和mincon，这一步又可以分为如下两步
+    - 列出每个frequent itemset l的非空子集
+    - 对于每个非空子集s，根据公式s -> (l - s) if sup_count(l) / sup_count(s) >= mincon得到association rules
+
+对于一个较大的数据集，会有过多的frequent patterns，不可能全部储存起来，对于这种情况有两种解决方法
+1. closed patterns
+
+    一个pattern X是closed，如果X是frequent itemset，并且X不是任何一个跟X具有相同support的itemset的子集
+
+    closed pattern是lossless compression，可以减少pattern数，但是不丢失任何support information
+
+2. max-patterns
+
+    一个pattern X是max-pattern，如果X是frequent，并且X不是任何一个frequent itemset的子集
+
+    max-pattern是lossy compression，只能知道itemset是frequent的，但是不知道子集的具体support
+
+## Apriori Algorithm
+
+对于一个frequent itemset，它的所有subset都是frequent的，这就是downward closure(Apriori) property，所以可以得到一个高效的mining思想，如果itemset S的任何一个subset是infrequent，那么S不可能是frequent，所以就不需要关注S了
+
+### Approach
+
+- scan DB所有的1-itemset得到candidates，选取candidates中的frequent 1-itemset
+- repeat，根据上一步的frequent k-itemset来生成k-item candidates，选取frequent (k+1)-itemset
+- 直到无法生成(k+1) candidates或者candidates中没有frequent itemset
+
+### Pro/Con
+
+这种算法的优点是易于实现，利用了large itemset property，但是缺点是假设DB可以驻留在内存中
+
+## FP-growth Algorithm
+
+即frequent pattern growth，克服了apriori算法的缺点，比如生成太多的candidate sets，需要重复扫描整个DB等，FP-growth算法不需要生成candidate，而是将数据压缩到一个较小的结构中，效率更高。apriori算法是广度优先的，而FP-growth是深度优先的
+
+### Approach
+
+- 扫描一次DB，得到所有的frequent 1-itemsets
+- 将所有的frequent 1-itemsets按从大到小排列
+- 再次扫描DB，将每一条数据改写成ordered frequent itemlist
+- 根据改写的itemlist，构建一个FP-tree
+    - 将每条数据依次以树的形式写出来，每有一个新的顺序，就建立一个分支
+- 对每一个frequent item，列出一个conditional database of pattern，根节点上的item不计入
+- 通过conditional pattern database来构建conditional FP-tree，也需要满足minsup
+- 最后根据FP-tree得出frequent patterns
+
+## Pattern Evaluation
+
+pattern-mining会产生很多patterns，但不是所有的patterns都是有用的，有两种类别的方法来判断
+
+- Objective Measures
+    - Support：过一个pattern出现的频率
+    - Confidence：通过一些items在一个rule中有多少次一起出现
+    - Correlation
+- Subjective Measures
+    - Relevance：是否与user的需求有关
+    - Unexpectedness：pattern是否显现出一些出人意料的knowledge
+    - Freshness：是否是新的information
+    - Timeliness：是否是与当下有关的
+
+有时Strong Association Rules其实是misleading的，比如一个10000条数据的DB，6000条包含A，7500条包含B，4000条同时包含A和B，这时如果考虑rule {A} -> {B}，support是40%，confidence是66%，如果min_sup是30%，min_conf是60%，那么这就是一个strong rule，这就是misleading的，因为P(B)是75%，大于confidence，所以其实A和B是negatively associated，因为购买A其实降低了购买B的可能
+
+从以上的例子可以看出，support和confidence其实是insufficient的，所以可以在measure中加入correlation
+
+### Lift
+
+Lift(A, B) = s(A, B)/(s(A)*s(B)) = P(A∪B)/P(A)P(B)
+
+如果lift(A, B) = 1，那么A和B是不相关的，如果>1，那么是正相关，如果<1，那么是负相关
+
+### χ2
+
+还可以用卡方分析的方法来判断是否相关，通过计算卡方值和查表来判断是否相关，然后通过计算出来的期望值和实际值比较来判断是正相关还是负相关
+
+### Null-Invariance
+
+null transaction就是neither A nor B，有时如果null transaction过多，那么得到的结论就不是很好，比如如果A和B同时出现的transaction只有100，A或B有1000，而A和B都不出现的有10000，那么用lift和卡方分析得到的结论都是A和B是强正相关的，但是数据上来看其实二者很少同时出现
+
+有一些measure是不受null transaction影响的，这些measure就是null-invariance，而受影响的就不是，卡方分析和lift就不是null-invariance
+
+不是null-invariance的方法就不适合应用于有过多或者过少null transaction的数据
