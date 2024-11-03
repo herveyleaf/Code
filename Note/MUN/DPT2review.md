@@ -1,0 +1,163 @@
+seires是一个具有索引的一维array，可以通过传递list或者array进行建立
+
+series的values其实就是numpy array，而index是一个array-like的对象，叫做pd.Index
+
+要访问series中的一个value，可以通过中括号[]和index进行选取，这样也可以进行slicing
+
+可以从两个观点来看待一个series
+
+1. 将series看作一个泛化的numpy array，这里的唯一区别就是series具有explicit index，并且index可以是任何数据类型
+2. 将series看作一个专门的python dictionary，这里并不是和numpy array一样区别很小，而是dictionary可以用任意的key去map一个任意的value，而series的任意数据类型的index也可以看作一个任意的key，来map一个对应的value，不过series比dictionary更高效，同时series也可以通过传入一个字典进行构造
+
+构造series时可以通过指定index来对需要构造成series的数据(list, array, dictionary)进行index的explicit指定，并且是可以进行boardcasting的，还可以通过index的数量来控制series中value的数量
+
+dataframe同样也可以以两个观点来看待
+
+1. 将df看作一个泛化的numpy array，这里和series的区别就是，df是二维的，而series是一维的，并且df的第二维column也是具有explicit的index，叫做column name，同时column name也是可以指定为任意数据类型。实际上，df就是多个共享index的series合并起来，每一个column都是一个series
+2. 将df看作一个专门的python dictionary，dictionary和series是通过key或index来map一个value的，而df则是通过一个column name来map一整个column，所以对df用中括号[]进行选取得到的是一个series
+
+构造df时可以传入一个series作为数据源，然后指定参数columns；也可以传入一个值是dictionary的list，这时不需要指定columns，因为字典的key将会作为column name，然后生成默认的index；还可以以字典的形式，每个key去map一个series，来构造一个df，这时的key将作为column name；并且可以传入一个二维的numpy array，然后指定参数columns和index
+
+Index对象可以被看作一个不可更改的array，或者一个有顺序可重复的集合
+
+1. 将index看作一个array，index在很大程度上就是一个array，可以通过中括号[]进行选取或者slicing，也具有array的attributes，但是不能修改
+2. 将index看作一个set，index遵循了很多python内置的set的规则，可以进行集合运算
+
+前面所说series可以被看作1d numpy array或python dictionary，所以series在selection上也一样
+
+1. 像dictionary一样，series也提供key和value的mapping，这样mapping不仅可以select，还可以modify
+2. 看作1d array的话，series的selection就跟numpy array一样，有slicing、masking和fancy indexing
+
+由于series不仅有explicit index，还有implicit index，所以在slicing的时候会有一些问题，在使用explicit index进行slicing时，结果会包含final index，而使用implicit index时，就跟其他的slicing一样不会包含final index
+
+除了以上的问题之外，如果series的explicit index是integer的话，在选择single value，如data[ 1 ]时会使用explicit index，而在slicing时，如data[ 1 : 3 ]，则会使用implicit index
+
+正因为会有这些confusion，所以pandas提供了两个indexer attributes，loc和iloc。loc会永远使用explicit index，而iloc，即implicit loc，会永远使用implicit index。这里需要注意的是，用loc进行slicing会保留final index，而iloc不会
+
+对于dataframe的selection，可以把df看作2d或者structured array，也可以看作dictionary of series
+
+1. 将df看作dictionary时，可以通过中括号[]加上column name来选取一个column(series)，除此以外还可以将column name作为attribute，通过.来获取，但这种方法不是对所有情况都有效，比如column name不是string，或者和df的内置method重名。这些selection都是可以modify的
+2. 将df看作2d array时，很多作用在array上的operation都可以作用于df上。由于df用中括号进行select时得到的结果是column，所以如果想要选取row时，需要对df.value进行选取，不过这样得到的就只是values，而通过iloc和loc indexer选取会保留index和column
+
+由于pandas是建立在numpy和python上，所以保留了一些convention，主要的就是，直接进行selection时，select single value，是column-wise，而在slicing时是row-wise。而在用indexer后就和nd array一样是row-wise了
+
+pandas和numpy一样，可以通过ufuncs对data进行element-wise的运算，对于unary ufuncs，只有一个对象，那么运算结果会保留原本的index和columns，而对于binary ufuncs，有两个对象，运算结果会合并index，由于pandas中有series和df，所以会有以下三种情况
+
+1. series&series，结果的index会取二者的并集，对于缺少对应index的时候，会用NaN填补
+2. df&df，由于df既有index也有column，而column其实也是index，所以发生在series上的index合并也会发生在df的index和column上，合并后的结果并不关心row和column的顺序，pandas会自动sort，缺失值也是用NaN填补
+3. series&df，这时可以series看作1d array，df看作2d array，会将series以row-wise的方向boardcasting，也可以指定axis来以column-wise方向
+
+对于缺失值，主要有两种策略来表达，一个是利用mask将所有的elements状态表示出来，二个是选取一个特殊的value来填充
+
+对于使用mask，需要用一个独立于原数据的boolean array来表达，或者占用原数据编码中的一个bit来locally的标识。而使用sentinel value，需要占用某个值，减少了valid value的范围，或者需要extra logic in CPU and GPU
+
+pandas处理缺失值的方式主要是依赖numpy，而numpy又没有原生表达非浮点缺失值的值，并且numpy支持很多种数据类型，所以不可能像R一样通过利用数据编码的一个bit来标识。所以pandas有两种表达缺失值的方法，默认的方法是用一个sentinel value，NaN或None来标识，也可以使用pandas提供的nullable数据类型，这种数据类型保留了一个bit标识缺失值
+
+对于sentinel value的标识方法，总共有2个value，python原生的None，numpy中的NaN，这两个值都有各自的应用场景，pandas会自动转换，而pandas特有的pd.NA，只有在nullable dypes中使用
+
+None是python object，所以十分通用，但是一旦用了这个值，由于pandas是固定数据类型的，那么其他所有的element都会转换成python objects，效率很低。并且python原生没有定义与None进行运算的结果，如果包含None进行运算会报错
+
+NaN是一个特殊的浮点值，这个值的特点是，许多与NaN作运算的结果都会是NaN，但是由于它是浮点值，所以在整数、字符串或者其他的数据类型种没有一个与之等价的值，不是很通用
+
+pd.NA一般不会使用，只有在user explicit指定数据类型为nullable dtypes时才会使用，通过将数据类型的首字母大写，就可以指定为nullable dtypes
+
+isnull()函数可以生成一个Boolean mask来标明哪些值是缺失的
+
+notnull()函数标明哪些值不缺失
+
+dropna()函数返回一个去掉缺失值的版本的数据，不能只drop一个single value，而只能drop含有缺失值的整行或整列，默认情况下是drop所有含有缺失值的列，但是可以通过指定参数axis来换成drop行，同时也可以通过指定参数how和thresh来具体丢弃某些含有缺失值的行列
+
+fillna()函数返回一个用指定值填补缺失值的版本的数据，可以指定参数method来表明填补的方式，比如ffile和bfill，对于df，同样可以指定参数axis来表明填补方式的方向
+
+pandas通过hierarchical indexing，也叫做multi-indexing来实现df或series的维度增加
+
+如果通过传递tuple作为index element的话，可以简单的实现视觉上的multi-index，但是实际上每个index还是1个对象，你不能只选择元组中的某一个值进行操作
+
+pandas有multi-index这个专门的数据类型，可以实现真正的层级结构
+
+对于series来说，multi-index后就具有多个维度，这一点可以在slicing中体现出来。对于一个multi-index的series，也可以将其看作一个df，每个multi-index的维度，将会变成df中的一个column，可以通过unstack()函数将multi-index series转换成df，同样可以通过stack()函数将df转换成multi-index series。df也可以有multi-index
+
+如果传入的index结构正确的话，pandas会自动识别出multi-index，并且构造出来，而我们也可以explicit的构造，就像构造一个df或series一样，直接用pd.MultiIndex，这样我们就会得到一个multi-index的对象，这个类的方法有from_tuples()，这样传入的tuple将会被转换成multi-index，还有from_arrays()，传入的array将会被转换成multi-index，并且由于一个个指定重复的index会很麻烦，还可以使用from_product()，这样pandas会自动将index一一配对，还可以通过直接指定参数levels和codes
+
+对于multi-index，可以通过指定names，为每层index进行标明，便于理解每一层index的意义
+
+对于dataframe，column其实也是index，所以也可以有multi-index
+
+对于multi-index series的slicing，就跟直观的nd array一样，是支持mask和fancy index的
+
+对于multi-index df的slicing，也是相似的，只不过直接通过中括号[]进行slicing会跟普通index的df一样，是对column进行slicing，要是想对row进行操作，需要用到indexer，iloc或者loc
+
+对于第一层index，是不需要使用元组的，并且可以进行slicing，而如果想选取更深层次的index，需要在元组中进行，但是在元组中就不能进行slicing了，只能进行explicit的select
+
+如果想要实现深层次的index slicing，那么就需要创建IndexSlice对象，explicitly指明这是slice
+
+许多对于multi-index对象的slicing操作会因为index没有sort而产生错误，有些时候，还需要level也是sorted的，所以pandas提供了sort_index()和sortlevel()这两个函数
+
+series可以通过unstack()将multi-index的某一个level投影到column上构成一个df，并且对于level较多的情况，可以指定参数level来指定哪一个level被投影。而dataframe的stack()函数是将df折叠成multi-index series，这里不需要指定level
+
+另一种series和df互相转换的方法是将index互相转换column。通过rest_index()函数，pandas将会把series的所有index都转换成column；通过set_index()函数，并通过参数指定哪些column要被转换，来将columns转换成index或者multi-index
+
+pd.concat()函数可以简单的拼接df或series，作用和np.concatenate很像，对于df来说，concat默认是row-wise的，即axis=0，可以通过指定axis来改变方向。即使df是由n个series，即n个column组成，但是为了遵循numpy，axis 0依然是row
+
+因为pd.concat()会保留index，而不同的df可能会出现index相同，这时由于index保留，就会在concatenate后的df中出现重复的index，对于这种情况，有以下几种方法处理
+
+1. 指定verify_integrity参数为True，如果有重复的index，那么就会抛出异常
+2. 指定ignore_index参数为True，即原本的index不重要，那么拼接后的结果就会忽略掉原本的index，重新生成默认的index
+3. 通过指定keys参数，为原本的每个df的index增加一个level，形成multi-index
+
+以上我们只涉及到了具有相同columns的df，实际情况下需要合并的df会有不同的columns。默认情况下concat()会保留columns的并集，对于缺失的值用NaN填补。也可以通过指定参数join来更改拼接的方法，默认取并集对应的是outer，也可以指定为inner，这样取的就是交集
+
+也可以在拼接前对数据进行处理，比如用reindex对column进行修改，由于concat操作非常常用，所以pandas为df和series设置的attribute，append可以直接进行concat
+
+merge和join两个操作是在内存中进行的高性能的合并，pd.merge()的底层逻辑是关系代数，关系代数的优点是可以进行许多十分基础的操作，将这些基础操作合并在一起可以进行非常多的复杂操作
+
+pd.merge()函数实现了三种类型的joins，具体用哪一种不需要user关心，pandas会自动识别出传入的数据来进行操作
+
+1. one-to-one，这是pandas种最简单的merge，即两个df所需要合并的column中的数据是一一对应的，没有一个值重复出现几次，这种情况就直接按照一一对应的关系进行merge
+2. many-to-one，即所需要合并的column中，一个df的该column的值都是唯一的，而另一个df中有重复出现，merge函数会将没有重复的那个df的row复制多次然后匹配，依然满足一一对应的关系
+3. many-to-many，即需要合并的column中，两个df的该columns的值都有重复，merge函数会将重复的值一一组合，确保所有情况都被合并过
+
+以上的规则都是merge()函数的默认应对方法，它默认所需要合并的列只有一列，且该列的名称在两个df中都是相同的，但实际上这种情况非常少，更多的是所需要合并的column的name是不同的、同名的column有多个
+
+对于以上这种情况，可以通过指定参数on或者left_on和right_on
+
+1. 如果两个df有不止一对相同的列名，可以通过指定参数on来指定要merge哪一对
+2. 如果所需合并的column在两个df中的列名不同，可以通过left_on和right_on分别指定所需合并的列在第一个df和第二个df中叫什么。但这样合并后的结果会产生两个相同的列，因为pandas不知道要用哪一个列名，所以就将两个columns都保留下来，即两个重复的列，对于这种情况可以使用drop()将多余的column舍弃掉
+
+不仅可以merge column，还可以merge index，merge index需要在指定参数left_index和right_index，这两个参数的值是True或False，因为index只有一列。如果值为True，则用该df的index作为key
+
+每个df都有一个内置函数join()，可以直接指定与某个df进行index-based merge，不需要其他的keyword
+
+可以同时进行column-based和index-based的merge，只需要指定好每个参数，并且merge操作可以作用在multi-index或multi-column上的object上
+
+以上的所有情况，都是取两个df的交集，即不会出现missing value，可以通过指定参数how的值来指定所需的set arithmetic
+
+如果两个df有同名的column，并且这个column不是所需要合并的，那么最后merge后的结果，pandas会自动的加上suffixes，比如_x和_y，也可以指定参数suffixes来自行调整
+
+pandas可以使用numpy中的所有aggregation操作，比如min，max，mean等等，对于series，就是简单的1d array，但是对于df，默认情况下是对每个column进行这些aggregation操作，同样可以指定axis来改变方向
+
+但是如果需要aggregate conditionally的话，需要用到groupby()函数，groupby()但操作可以分解为3个步骤
+
+1. split：这一步是根据指定的label进行分割，按要求将数据split
+2. apply：这一步是将所要进行的aggregation操作分别作用在split后的每一部分数据上
+3. combine：将计算结果merge后返回一个output array
+
+以上这些操作可以手动进行，但是使用groupby的好处是不需要将中间步骤实例化，也就是说可以节省开销，更加高效
+
+groupby后的type其实是一个特定的类型，DataFrameGroupBy object，而不是一连串的DataFrame。所以每进行一个groupby操作，就一定要跟着一些操作，比如aggregate，filter，transform，apply，否则单独进行groupby只会得到一个特定的对象，而不是分割后的一连串的df，只有指定了aggregation操作，才会进行真正的计算
+
+groupby后的对象可以进行column indexing，可以跟普通的df一样对column进行select，并且可以在groups之间进行迭代，如果对groupby后的对象施加一些没有被定义在groupby object上的操作，如describe()，那么这个操作将会在每个group上执行一次
+
+groupby object有aggregate，fliter，transform和apply这些methods
+
+1. aggregate：可以同时将多个aggregation操作计算出来
+2. filter：可以通过传递filter function将不满足filter的group给drop掉，最后得到的结果是drop后的原数据，filter function应该返回哪些group通过了filter，哪些没有通过的boolean值
+3. transforma：通过传递transformer，对每个group进行一些转换，最后得到的结果是transform后的原数据
+4. apply：apply函数允许对group后的结果施加任何function，所施加的function应该接受一个df作为input，因为apply函数实际上就是把每个group作为input传递给function，这个function的output应该是一个pandas object或者标量
+
+不仅可以通过column name进行split分组
+
+1. 分组的key还可以是一个与df的index互相match的series或list，来指定每一行被分到哪一个group中
+2. 分组的key还可以是一个dictionary，用来map原本df的index和要分入的group，这种方法不需要指定每一行的group情况，会自动根据map来分组
+3. 分组的key还可以是任何python function，这些function会将index作为input，然后将output相同的row分到同一组
+4. 也可以将以上这些key的操作结合起来，通过列表传入作为key，会得到一个multi-index的结果

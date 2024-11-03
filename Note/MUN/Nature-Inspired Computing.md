@@ -770,3 +770,287 @@ chromosomes包含3个部分
     - rotation angles：α1, ..., αn
 
 并不是每个部分都会被用到
+
+### Mutation Mechanism
+
+从正态分布N(0, σ)中取一个随机数，σ是mutation的步长
+
+σ根据1/5 success rule进行vary，如下
+
+对于一个数k，每k代，mutation步长应该
+- increase，如果太多steps是成功的(>20%)，因为这表明search过于local
+- decrease，如果太少steps是成功的(<20%)，因为这表明step size过大
+- stay，除了出现以上两种情况
+
+### Recombination
+
+只生成1个child，并且作用在每一个单独的gene position上，有两种方式
+- intermediary：根据parents在该位置上的平均值
+- discrete：选择一个parent在该位置上的值
+
+如果parents是两个或者多个，那么
+- local：在所有position上都用同样的两个parents
+- global：对每个不同的position选择不同的两个parents
+
+### Parent Selection
+
+parents是通过随机分布选取的，所以ES的parent selection是无偏的，每个individual都有相同的被选取的概率
+
+### Survivor Selection
+
+相比于(μ + λ)，更常使用(μ, λ)，因为(μ, λ)丢弃掉所有的parents，所以可以避免local optimal；并且如果fitness function会随着时间改变，(μ + λ)将会保留outdated解，所以难以follow the moving optimal；(μ + λ)阻碍了self-adaption，因为错误的adapted strategy parameters可能在相当长的一段时间内存在
+
+selective pressure在ES中非常高，因为λ一般比μ高很多
+
+一般而言，ES是一个比(simpel)GA激进很多的优化方法
+
+## Evolutionary Programming
+
+EP是将evolution通过learning process进行模拟，目的是生成人工智能，智能的定义是有adaptive behaviour，所以具有预测的能力是智能的关键
+
+传统EP是根据finite state machines来预测，而现代的EP是numerical optimization，EP的特点是具有非常open的框架，任何representation和mutation都可以在EP下进行，现代EP与一些ES技术有重叠，所以很难说什么是标准的EP
+
+EP特别的地方在于，没有recombination，标准的现代EP具有参数的self-adaption
+
+EP的representation是实数向量，没有recombination，mutation是根据高斯分布进行的，parent selection是deterministic，即每个parent只产生一个offspring，survivor selection是probabilistic(μ + μ)
+
+### Prediction by Finite State Machines
+
+finite state machine(FSM)有：state(S)，input(I)，output(O)，transition function(δ) S × I -> S × O
+
+这种机制可以用于prediction，比如在一个序列中预测下一次的input
+
+quality就是预测的准确度
+
+### Modern EP
+
+现代EP没有预先定义的representation，所以也没有预定义的mutation，不过mutation必须与representation match，通常会对mutation参数使用self-adaption
+
+#### Representation
+
+对于continuous parameter optimization，chromosomes包含两部分，一个是object variables，x1, ..., xn，另一个是mutation step size，σ1, ..., σn
+
+所以完整的genotype就是< x1, ..., xn, σ1, ..., σn >
+
+#### Mutation
+
+σ1' = σ1 * (1 + α * N(0, 1))
+
+x1' = x1 + σ1' * Ni(0, 1))
+
+α = 0.2
+
+boundary rule：如果σ' < ε，那么σ' = ε
+
+#### Recombination
+
+EP没有recombination，因为EP基于不同于GA和ES的biological inspiration
+
+在EP中，search space中的一个点代表整个species，而不是一个individual，所以不可能有species之间的crossover
+
+#### Parent & Survivor Selection
+
+1. parent selection：每个individual通过mutation产生一个child，是deterministic的，不是biased by fitness
+
+2. survivor selection：parents和offspring混合在一起后，通过stochastic round-robin tournaments进行survivor selection
+
+## Genetic Programming
+
+GP的产生主要是应用在机器学习中，特点是需要huge population，并且速度较慢，chromosome是非线性的，比如tree、graph，并且mutation是可行但非必要的
+
+GP的representation是tree structure，recombination是exchange of subtrees，mutation是random change in tree，parent selection是fitness proportional的，survivor selection是generational replacement
+
+对于一个可行的GP model，总体框架是：IF formula THEN good ELSE bad
+
+未知的部分只有formula，因此search space(phenotype)就是一系列formulas，最直观的fitness方法就是一个formula正确classify的比例
+
+### Initialization
+
+最常用的办法是ramped half-and-half
+
+假设有一系列functions F和terminals T，树的最大的initial depth是Dmax
+
+initial population的每个member是通过以下两种方法中的一种产生的，概率相同：
+
+1. full method
+
+    每一个branch都有depth Dmax
+
+    从root开始，nodes at depth d < Dmax是从F中随机选取的；d = Dmax是从T中随机选取的
+
+2. grow method
+
+    每个branch的depth <= Dmax
+
+    从root开始，nodes at depth d < Dmax是从F∪T中随机选取的，d = Dmax是从T中随机选取的
+
+### Mutation
+
+通常是一个很低的或者是0的mutation rate，GP的雏形根本没有mutation，后来有人建议以一个较低的rate，比如5%左右进行mutation
+
+所以GP与其他EA非常不同，不过目前的共识是crossover在GP中有large shuffling effect，可以被看作一个macromutation
+
+### Offspring Creation Scheme
+
+GA的scheme是同时使用crossover和mutation
+
+而GP的scheme是基于一定概率选择使用crossover或者mutation
+
+### Selection
+
+parent selection通常是fitness proportionate，在非常大的population时，经常进行over-selection，以提高效率：
+
+- 根据fitness进行rank，然后将population分为两组
+    - group 1：the best x% of population
+    - group 2：the other (100-x)%
+- 然后从group 1中选择所需的80%，从group 2中选择20%
+
+survivor selection有两种情况
+
+- typical：generational scheme
+- recently：steady-state
+
+### Bloat
+
+随着时间的增加，tree size也会增加
+
+countermeasure有：禁止可能导致too big children的variation，但这样会inhibit search；所以通常使用parsimony pressure，即对oversized进行一定惩罚
+
+# Parameter Tuning and Control
+
+在过去的数十年内，大多数的研究都是parameter control，traditional parameters是mutation和crossover，而non-traditional parameters是selection和population size
+
+parameter tuning上没有很多研究，因为没人会提到他们的EA背后tuning的作用，并且很少有关于tuning的方法和算法被发表出来
+
+## Taxonomy
+
+Parameter setting可以分为两大类，其中parameter control又可以分为三类
+
+1. parameter tuning(before the run)
+2. parameter control(during the run)
+    - deterministic(time dependent)
+    - adaptive(feedback from search)
+    - self-adaptive(coded in chromosomes)
+
+## Parameter Tuning
+
+即在真正的运行前，testing和comparing不同的values
+
+这里的问题时users在设置中犯的错误可能会导致error或者sub-optimal；并且这种方式的时间开销很大；需要与parameters进行交互，所以不可能搜索整个空间；tuning时的good value可能在真正运行时变成bad value
+
+## Parameter Control
+
+在真正的运行期间对参数进行调整，比如
+
+- 预先设定参数的值遵循一个方程，p = p(t)
+- 通过运行的feedback进行调整
+- encode parameters in chromosomes and rely on natural selection
+
+这几种方法的问题是
+
+- 找到optimal p已经很难了，而找到p(t)更难
+- 仍然是user去定义feedback，无法optimize
+- when would natural selection work for algorithm parameters?
+
+parameter control可以在不同的search阶段使用理想的参数
+
+adaptive和self-adaptive control可以将user从tuning中解放出来，所以对于一个新的问题，可以减少所需的专业背景
+
+但以上这些对于不能量化的问题来说是不适用的
+
+## Designing Evolutionary Algorithm
+
+可以认为EA有3个层次
+
+- application
+- algorithm
+- design
+
+这些不同的层次通过两种方式进行交互
+
+1. Control Flow：
+
+    design -> algorithm -> application，每个layer作为一个整体来对下一个layer进行优化，design layer整体对algorithm layer整体进行优化
+
+2. Information Flow：
+
+    design <- algorithm <- application，每个layer作为一个整体为上一个layer提供信息，application layer为algorithm layer提供solution quality这个信息，algorithm layer为design layer提供algorithm quality这个信息
+
+一个EA的设计可以从底层和顶层两个方向进行
+
+- lower level：核心是problem solving，一个EA的algorithm layer是为了找到对于problem的application layer的最优解
+
+- upper levle：核心是design method，一个EA的design strategy是为了找到对于EA的algorithm layer的最优参数
+
+## Testing Utility
+
+在application layer我们可以evaluate fitness(of an EA instance)，而在algorithm layer我们可以test utility(of the parameter vector)
+
+所以utility landscape是一个抽象的landscape，其中坐标是一个EA的参数向量，而高度反映的是utilitiy
+
+这种情况与fitness landscape很像，但是也有不同点。对于大多数问题，fitness values是deterministic，但是utility values总是随机的，因为它们反映的是EA的性能，而EA是随机搜索的；how good the parameters are depends on context，我们只需要找到一个特定问题的最优解还是需要重复解决一类，但是数据不同的问题
+
+### Utility Landscape
+
+每一个参数的搜索空间合并起来组成一个landscape，每一个point就是一个EA instance，height of point就是一个EA instance的性能(对于一个特定问题)，如果在landscape中有一些structure的话，then wew can do better than random or exhaustive search
+
+### Vocabulary
+
+| / | lower part | upper part|
+| --- | --- | --- |
+| method| EA | Tuner |
+| search space| Solution vectors | Parameter vectors |
+| quality | Fitness | Utility |
+| assessment | Evaluation | Test |
+
+## Algorithm Quality
+
+### Performance
+
+对于EA，有两种基本的performance measures，一个是通过fitness function来衡量solution quality，在一个是通过algorithm speed
+
+以上两种measures的组合可以一次就测量出algorithm performance
+
+- mean best fitness：fix time and measure quality
+- average number of evaluations to a solution：fit quality and measure time
+- success rate：fix both and measure completion
+
+但是一个对性能的良好估计是需要多次测量的
+
+### Robustness
+
+鲁棒性是一种在某些维度上衡量algorithm性能的measure，具体衡量结果是取决于以下几点
+
+- problem instance
+- parameter vector being used
+- effects of the random number generator
+
+context决定以上那种鲁棒性的权重更高
+
+## Offline versus Online
+
+offline即parameter tuning，online是parameter control
+
+tuning的优点是简单，因为control strategies也有自己的parameters，也需要tuning，了解tuning可以更好的设计出一个good control stategies
+
+EA tuning本身就是一个search problem，最直接的方法就是generate and test
+
+主要有两类tuners，non-interative和iterative
+
+- non-iterative：只在初始化的时候进行generate，所以只用到一系列固定的parameter vectors，每个vector都会在test阶段被衡量一次，然后找到最优的结果
+- interative：初始化时只产生一点parameter vectors，然后在每次test后，根据目前存在的vectors的性能再生成新的vectors
+
+而对于non-iterative又根据test分为两类
+
+- single stage procedures对于每个vector都是进行同样固定数量的test
+- multi-stage procedures则会在test中增加select step，只有一些理想的vectors被选中进行接下来的test，而那些low performance的则被忽略
+
+对于numeric parameters，比如population size，crossover rate，这些是具有sensible distance的，所以它们是可搜索的，对于可搜索的parameter有两种情况，relevant和irrelevant，relevant parameter根据parameter value的改变，EA performance会有比较显著的变化，而irrelevant parameter则与parameter value的改变没有什么关系
+
+对于symbolic parameters，比如crossover operator，selection method，这些是没有sensible distance的，所以它们是不可搜索的，所以它们必须be sampled，对于random parameter order，它是non-searchable ordering，而将这些parameter进行一定排列后，所呈现的图像有一定规律，此时就是searchable ordering
+
+一些symbolic parameter的值可以introduce一个numeric parameter。parameters可以有一些层级、网状结构。因为EA parameters的数量通常是没有被定义的，所以不能简单的将各个parameter的值域相乘得到design space/tuning search space
+
+symbolic和numeric parameter的区别会导致EAs和EA instance的区别，我们可以将symbolic parameters看作high-level，定义了一类EA的本质，而numeric parameters作为low-level，定义了该类EA的一个特例
+
+所以如果两个EA具有不同的symbolic parameters，那么它们就是两类不同的EA；如果所有的parameters，包括numeric的都被指定了值，那么这就是一个EA instance；如果两个EA instances只有numeric parameters的值不同，那么这是同一种EA的两个variants

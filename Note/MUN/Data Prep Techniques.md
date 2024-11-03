@@ -342,3 +342,123 @@ multiindex创建后可以作用在任何series和dataframe上
 对于通过unstack()函数将multiindex的series转换成一个二维的dataframe，可以通过指定参数level来表明要将哪一个层次的multiindex转换到column上
 
 另一种将multiindex的series转换成二维dataframe的方式是使用reset_index()函数，这个函数会将所有的index全部投影到column上，并且包含series中的数据列，可以通过name参数指定数据那一列的column名。这个函数也有对应的相反作用的函数，set_index，可以将一个有多个column的dataframe转换成一个具有multiindex的dataframe，通过参数来指定哪些column作为index
+
+# Concat and Append
+
+pd.concat()函数可以用来拼接dataframe或者series，对于dataframe，默认情况下这个函数是以row-wise的方向进行拼接，但是也可以通过参数axis来指定方向
+
+与np.concatenate()这个函数不同的是，pd.concat()函数会保留indices，即使这些indices中含有重复的
+
+对于以上情况，可以通过指定参数verify_integrity来解决，如果该参数为true，那么如果有重复的index，concat()函数就会抛出一个异常
+
+如果index不重要，可以通过参数ignore_index来忽略掉原有的index，concatenate后的新的数据将会用默认生成的index
+
+如果想要保留原有的index，可以通过为每个不同data的index指定一个key，用于生成multiindex
+
+对于dataframe的拼接，有时会有部分column是重复的，默认的操作是将缺失值用NaN填补，对应的是join参数的值为outer，也可以将参数值赋为inner，这样就只会保留共有的column。如果只想保留某一个dataframe的column，可以先对另一个dataframe以想保留column的dataframe进行reindex
+
+因为直接进行拼接是一个很常用的操作，所以series和dataframe都有一个append()函数可以更方便的完成这个操作，这里的append()函数不会对原本的object进行修改，而是创建一个新的对象，所以这个方法效率不是很高
+
+# Merge and Join
+
+merge和join两个操作是高性能，在内存中进行的合并。pd.merge()函数的底层逻辑是关系代数
+
+pd.merge()函数实现了多种类型的joins操作，one-to-one，many-to-one和many-to-many，这三种不同的类型，都可以通过merge()函数统一进行，具体使用哪一种，是根据传入的数据类型决定的
+
+merge是以column为key进行匹配合并，大多数情况下index是不重要的，对于要合并的那列数据，merge()函数会自动的保留一定的顺序，只有在一些特定的情况下才会按index进行合并
+
+## One-to-One Joins
+
+即待合并的列中的数据都是一一对应的，那么就是非常简单的合并
+
+## Many-to-One Joins
+
+即待合并的列中的数据，在其中一个dataframe中是有多个同样的值，merge()函数会自动的正确的保留并复制这些一对多的情况，那些没有重复的列会重复
+
+## Many-to-Many Joins
+
+即待合并的那一列，在两个dataframe中都有多个重复的值，这时merge()函数会将这些重复的值一一组合，确保所有情况都被合并过
+
+## Specification of the Merge Key
+
+以上这些规则，都是merge()函数的默认应对方法，它默认需要合并的列的名称都是相同的，但实际上真正的数据大多并不是这样，而是需要合并的列，在不同的dataframe中有着不同的列名
+
+对于两个dataframe有共同的列名时，我们可以通过指定on参数，来explicitly的指定要合并哪一列
+
+对于想要合并两个dataframe中不同列名的列，可以用参数left_on和right_on来指定，但这样合并后的结果会产生两个相同的列，因为pandas不知道要用那个列名作为合并后列的名称，所以就将两个列名都保留下来，有两个重复的列
+
+这个时候可以用drop()函数来指定drop掉多余的列
+
+不仅可以merge column，还可以merge index，即row。merge index则需要指定参数left_index、right_index，这两个参数的值是True或Fals
+
+每个DataFrame都有一个内置的函数join()，可以直接指定与其他DataFrame进行index-based merge，不需要其他的keywords
+
+也可以同时进行column-based和index-based的merge，只需要每个参数都进行指定，并且merge操作同样适用于multi index和multi column
+
+## Specifying Set Arithmetic for Joins
+
+默认情况下，merge后的结果是取两df的intersection交集，也叫做inner join，我们可以通过指定参数how来指定set arithmetic，值可以是outer，left，right等，outer的结果就是df的union
+
+## Overlapping Column Names
+
+如果merge的两df含有同名的column，pandas会自动的加上suffixes，比如_x和_y这些，也可以指定参数suffixes来调整
+
+# Aggregation and Grouping
+
+对于同样适用于NumPy的aggregation操作，作用在series上时，返回值是single value，作用在dataframe上时，返回值是一个series，是对每个column进行这个aggregation操作，但是通过指定axis，可以指定aggregation是对每一行进行的
+
+## Groupby
+
+groupby()函数可以conditionally aggregate在一些label或者index上
+
+groupby的操作可以分解为3个步骤
+
+1. split：这一步是根据指定的label进行分割，按要求将数据split
+2. apply：这一步是将所要进行的aggregation操作分别作用在split后的每一部分数据上
+3. combine：将计算结果merge后返回一个output array
+
+以上这些操作可以手动进行，但是使用groupby的好处是不需要将中间步骤实例化，也就是说可以节省开销，更加高效
+
+因为groupby后的type其实是一个特定的类型，DataFrameGroupBy object，而不是一连串的DataFrame。所以每进行一个groupby操作，就一定要跟着一些操作，比如aggregate，filter，transform，apply，否则单独进行groupby只会得到一个特定的对象，而不是所需的结果
+
+### Column indexing
+
+groupby后的对象可以进行行方向的选取，即column indexing，可以选取某一行进行操作
+
+### Iteration over groups
+
+groupby后的对象支持直接在groups之间进行迭代操作
+
+### Aggregate, Filter, Transform, Apply
+
+#### Aggregate
+
+aggregate method可以将多个aggregation操作同时计算出来
+
+#### Filting
+
+filting可以根据group属性来drop data
+
+比如df.groupby('key').filter(filter_func)，将会得到根据filter_func进行drop后的结果，filter_func应该是表示哪些数据通过了filter，哪些被filt的Boolean值
+
+#### Transformation
+
+可以将groupby后的数据在进行一些分组后的操作后，再转换成input时的形式返回
+
+#### Apply
+
+apply函数可以允许你对group的结果施加任何function
+
+施加的function应该接受一个DataFrame作为input，返回一个pandas object或者一个标量
+
+### Specifying the Split Key
+
+不仅可以按一个single column name进行split分组
+
+分组的key可以是一个与df的index互相match的series或者list，来指定每一行被分到哪一个group
+
+key也可以是一个字典形式的map，来指定不同的index被分到哪一组
+
+也可以传递一个python function作为key，将会以index作为input然后执行传入的python function，再进行group和aggregation等操作
+
+也可以将以上的这些key的选择结合起来，然后会得到一个multi index的结果
