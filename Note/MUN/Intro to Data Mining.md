@@ -433,3 +433,446 @@ null transaction就是neither A nor B，有时如果null transaction过多，那
 有一些measure是不受null transaction影响的，这些measure就是null-invariance，而受影响的就不是，卡方分析和lift就不是null-invariance
 
 不是null-invariance的方法就不适合应用于有过多或者过少null transaction的数据
+
+# Clustering
+
+## Basic concepts and Methods
+
+clustering是unsupervised learning，groups是未知的，而classification是supervised learning，用已知的labels去训练一个model
+
+common algorithms有：
+- K-means, K-medoids
+- agglomerative clustering
+- density based clustering
+
+### Requirements for clustering analysis algorithms
+
+- Ability to handle different types of data
+- scalability(handle large datasets)
+- discovering clusters with arbitrary shapes
+- reducing the need for domain knowledge
+- robustness to noisy data
+
+### Overview of Basic Clustering Methods
+
+#### Partitioning Methods
+
+将dataset的n个objects分为k个clusters，k由user指定
+
+像k-means和k-medoids算法会step by step的得到一个good enough的结果，但是这些算法只在roughly spherical in shape的数据作用较好，而在complex or irreguar shapes的数据中效果不佳
+
+#### Hierarchical Methods
+
+建立一个tree-like的cluster structure，有agglomerative(bottom-up)或divisive(top-down)两种方向
+
+这种方式的缺点是，一旦作出了决定，就不能回头了，也就是说error不能被修正
+
+#### Density-Based and Grid-Based Methods
+
+寻找densely packed together的data points
+
+density-based clustering根据number of points in a neighborhood进行cluster，可以对任意shape的数据进行cluster，不像partitioning methods一样只对spherical shape有效，并且可以分辨出noise和outliers
+
+grid-based clustering将data space分为a grid of cells，个悲剧density of points in the cells进行cluster，这种方法十分迅速
+
+## K-Means
+
+首先user指定the number of clusters k，然后在dataset的n个objects中随机选出k个objects作为initial cluster centers，再通过计算剩下的每个objects与cluster centers的euclidean distance，将the most similar objects放到对应的cluster中，然后update cluster centers，重复这个步骤直到no change
+
+由于initial centroids are chosen randomly，所以运行多次可能会得到多个不同的结果
+
+centroids通常是the mean of the points in the cluster
+
+复杂度是O(n * k * t)，n是number of iteration
+
+### Pre Processing and Post Processing
+
+- pre-processing
+    - normalize data
+    - remove outliers：避免skewing of cluster centers
+- post-processing
+    - eliminate small clusters：可能是noise
+    - split loose clusters：对于SSE高的cluster，将其划分为更小的clusters
+    - merge close clusters：降低SSE
+
+### Challenges
+
+k-means可能达不到global optimum，通常是得到一个local optimum，并且initial cluster center会影响到结果
+
+### Sum of Squared Error(SSE)
+
+对于每个point，error是the distance to the nearest cluster
+
+所以SSE = ΣΣ dist^2(x, ci) = ΣΣ (||x - ci||^2)
+
+x是cluster Ci中的一个data point，ci是Cluster Ci的center，所以SSE就是每个data point与其cluster center的距离的平方和
+
+对于两个clusters，SSE小的cluster更优
+
+减小SSE最简单的方法就是增加k，而一个good clustering with smaller K的SSE可能比poor clustering with larger K要高，当k = n时，SSE是0
+
+## Improvements to k-means algorithm
+
+### K-Means++
+
+K-Means is sensitive to initialization
+
+不同的initialization可能得到相当不同的clustering result，所以original proposal select K seeds randomly and run multiple times
+
+k-means++相较randomly select centroids会更慢一些，但是结果更好，尤其是在降低SSE这方面
+
+算法的步骤是：
+1. First Centroid：choose one initial point randomly
+2. Remaining Centroid：对于剩下的k-1个centroids
+    - 对于dataset中的每一个point，计算其与距离最近的centroid之间的距离
+    - randomly pick the next centroid，with a probability that is proportional to the square of the distance to the nearest centroid，与任何一个centroid距离都较远的point有更高的概率被选中，有助于spread them out
+3. 重复步骤2直到有k个centroids被选中
+
+基于概率进行centroid的选择让算法更加balanced and robust，可以避免选中outlier作为centroid，并且避免deterministic patterns
+
+与常规的k-means相比，k-means++ is generally preferred，因为即使用到其它的advanced initialization strategies，k-means++ is generally the best；同时，k-means++ has better quality guarantee than k-means；在实际应用中，k-means++比k-means的速度和质量都要更优秀
+
+k-means在clusters are differing sizes, densities, non-globular shapes时会出现问题，并且dataset包含outliers时也会有问题
+
+### K-Medoids
+
+k-means is sensitive to outliers
+
+k-means基于averaging points in each cluster计算the center of clusters，所以outliers肯能会pull the average toward them
+
+k-medoids是k-means的变种，设计的初衷就是reduce sensitive to outliers
+
+instead of using the mean，k-medoids从dataset中selects an actual point作为center(medoid)，每个data point都被assigned to the cluster with the closest medoid，这样可以最小化absolute-error，即total distance from each point to its closest medoid
+
+当k=1时，复杂度是O(n^2)，而当k是general positive number时，k-medoid problem是NP-hard
+
+#### Partitioning Around Medoids(PAM)
+
+PAM iis a popular way to perform k-medoids clustering，PAM的每一次decision-making都是即时的，基于cost的，不会考虑到全局最优，所以这是一种贪心算法，这也意味着PAM不能保证得到optimal solution，但是这也让k-medoid这个NP-hard问题有了一个实际的operation
+
+PAM的步骤如下：
+1. Initialization：随机选取k个objects作为initial medoids
+2. Assignment：assign每个non-medoid object到距离其最近的medoid来形成clusters
+3. Swap Evaluation：随机选取k个non-medoid objects o_random
+    - calculate the cost of swapping each medoid with o_random
+    - 如果swapping reduces the overall clustering cost(measured by a change in abolute error)，那么就perform the swap
+4. 重复步骤2和3直到没有swaps improve the cost
+
+k-mediods clustering就是找到representative objects，即medoids
+
+PAM则是从initial set of medoids开始，并且iteratively replaces one of the medoids by one of the non-medoids，PAM对于较小的dataset的效果较好，而对于较大的dataset则不是很好，因为算法的复杂度很高
+
+### K-Medians
+
+medians are less sensitive to outliers than means
+
+这种算法先随机选择k个points作为initial representative objects，然后assign every point to its nearest median，并且重新计算每个cluster的median，重复以上两步，直到criterion function收敛
+
+### K-Modes
+
+k-means不能处理categorical data，而k-modes则是用modes替换means以扩展可处理的数据类型
+
+distance通过dissimilarity between object X and the center of a cluster Z来计算，并且这个算法也是会迭代并进行centroid update的
+
+a mixture of categorical and numerical data, using K-Prototype method
+
+## Hierarchical methods
+
+hierarchical methods分为两类，agglomerative和divisive，前者是自底向上的，最终得到一个cluster，后者是自顶向下的，最终每个object都会自成一个cluster，agglomerative在实际应用中更加popular
+
+### Agglomerative
+
+基本思想是建立一个tree，初始状态时每个object作为一个独立的cluster，然后找到最相近的两个cluster，合并为一个新的cluster，重复这个步骤直到所有object都合并到一个cluster中，这时整个过程就呈现出一个树状的结构，然后user指定需要几个clusters
+
+这种方法的优点是不需要像k-means一样预先指定需要多少个clusters，而是在做完所有步骤后根据user需求自行split，缺点则是这种方法是没有going back的，即将两个cluster合并为一个新的cluster后，不会再将两个sub cluster分开重新与其他的cluster合并，一旦做出决定就不会进行修正了。这种方法是deterministic的，在不更改参数的前提下，即使多次运行，得到的结果也始终是一样的
+
+#### Similarity Measure
+
+不同的similarity measure会得到不同的merge结果，两个clusters之间的距离可以基于minimum distance, maximum distance, mean distance, average distance，每种不同的计算方式对结果的影响都是不同的
+
+如果使用minimum distance，这时叫做single-linkage algorithm，即根据两个clusters之间距离最近的points之间的距离进行join判断；如果使用maximum distance，这时叫做complete-linkage algorithm，根据两个clusters之间距离最远的points之间的距离进行join判断。与k-means算法一样，single-linkage和complete-linkage都是sensitive to outrilers，可以使用mean或者average distance进行计算来避免outlier的影响
+
+GAAC和centroid clustering在distance calculation的公式是相同的，但是GAAC是考虑要合并的两个cluster中的所有pairs，包括原本就在同一个cluster的两个points，以所有pairs之间的距离的平均值作为两个clusters之间的距离，所以GAAC的计算量非常大；而在centroid clustering中，则是排除了原本处在同一个cluster的pairs，以两个clusters的质心之间的距离作为clusters之间的距离，计算量减少
+
+Ward's criterion则是与partitioning methods中最小化SSE的思想一样，即每次进行merge时，选择两个合并后的SSE最小的cluster进行合并，在所有的similarity measure中，ward's criterion的效果是最好的
+
+## Density-based Clustering methods
+
+traditional clustering techniques struggle with non-spherical, arbitrary shapes，此时partitioning和hierarchical methods就不适用了
+
+而density-based methods则可以discover non-spherical clusters，identify complex-shaped clusters
+
+### DBSCAN
+
+核心思想是identify dense region to form clusters，这里有两个参数，ε和min-points，ε是neighborhood的半径大小，而min-points是衡量一个point是否为core point，如果neighborhood中的points数量不小于min-points，那么就是core point
+
+DBSCAN中的每个points可以分为以下几类
+
+- Core Object：neighborhood中有不低于min-points的points的object，统计neighborhood中points时要算上其自身
+- Border points：在core object的neighborhood中，但是其自身不是core object，即其自己的neighborhood内points数量达不到min-points
+- Outliers：或者叫做noise points，即不在任何core points的neighborhood中的point
+
+DBSCAN又有如下几个概念
+
+- Directly Density-Reachable：如果一个点p属于点q的neighborhood，并且q的neighborhood中的points大于等于min-points，那么p is directly density-reachable from q
+- Density-Reachable：对于点p和点q，如果两点之间有a chain of points is directly density-reachable可以连接起来，那么p is density reachable from q
+- Density-Connected：如果有一个点o，与点p和点q都是density-reachable的，那么p is density-connected to q
+
+DBSCAN的步骤如下
+
+1. 随机选取一个点p
+2. 如果p是core point
+    - 创建一个cluster并将p和其neighborhood中的所有points加入到cluster中
+    - 检查neighborhood中的其它所有点，如果也是core point，就扩展neighborhood，重复此过程直到无法继续扩展
+3. 如果p不是core point
+    - 如果p是border point，那么将其归到所属的core point的cluster中
+    - 如果p是outlier，将其标记，不归到任何cluster中
+4. 重复以上步骤，直到所有points都被访问过
+
+# Outlier Detection Introduction
+
+## Outlier Detection vs Clustering
+
+两个高度相关但是不同的tasks
+
+- differnece in purpose
+    - clustering finds the majority patterns in dataset
+    - outlier detection capture exceptional cases that deviate from the majority patterns
+- difference in methodology
+    - outlier detection might also use supervision
+    - clustering is typically unsupervised
+
+## Outlier vs Noise
+
+outlier is a data object that deviates significantly from the rest of the objects, as if it were generated by a different mechanism
+
+noise is a random error or variance in a measured variable thus is not interesting
+
+## Outlier Detection and Novelty Detection
+
+novelty may initially appear as outliers, to this extent, outlier detection and novelty detection share some similarity in modeling and detection methods
+
+difference: in novelty detection, once new topics are confirmed, they are usually incorporated into the model of normal behavior so that follow-up instance are not treated as outliers anymore
+
+## Types of Outliers
+
+### Global Outliers
+
+a data object is global outlier if it deviates significantly from the rest of the dataset, it's the simplest type of outliers
+
+most outlier detection methods are aimed at finding global outliers
+
+### Contextual(Conditional) Outliers
+
+in a given dataset, a data object is a contextual outlier if it deviates significantly with respect to a specific context of the object
+
+for example, "it's 28 degree today" is exceptional if today is in winter, but not if today is in summer
+
+contextual outlier detection has to specify the context as part of the problem definition
+
+#### Contextual Attributes vs Behavioral Attributes
+
+in contextual outlier detection, the attributes of data objects are divided into two parts: Contextual and Behavioral
+
+- Contextual: define the object's context(condition), in example above, date and location may be
+
+- Behavioral: define the object's characteristics(value), to evaluate whether the object is an outlier or not, in example above, temperature may be
+
+#### Contextual Outliers vs Global and Local Outliers
+
+contextual outliers are a generalization of local outliers
+
+global outlier detection can be regarded as a special case of contextual outlier detection where the set of contextual attributes is empty
+
+### Collective Outliers
+
+given a dataset, a subset of data objects forms a collective outlier if the objects as a whole deviate significantly from the entire dataset, while importantly the individual data objects may not be outleirs
+
+for example, a student is sick in a class may not be outlier, but 10% of students sick are sick on a single day may be outlier
+
+### Comparison
+
+a dataset can have multiple types of outliers, an object may belong to more than one type of outlier
+
+global outlier detection is the simplest
+
+context outlier detection requires background information to determine contextual attributes and contexts
+
+collective outlier detection requires background information to model the relationship among objects to find groups of outliers
+
+## Overview of Outlier Detection Methods
+
+### Categories Based on Data Labels
+
+- supervised: this kind of methods model data normality and abnormality, which can handle imbalanced classes
+
+- unsupervised: this kind of methods make an implicit assumption that the normal objects are somewat "clustered"
+
+- semi-supervised: this kind of methods obtain some labeled examples, but the number of such examples is often small
+
+### Categories Based on Assumption about Outliers vs Normal Data
+
+- Statistical methods(model-based methods): make assumption of data normality, normal data follows a probabilisitc model
+
+- Proximity-based methods: assume that an object is an outlier if the nearest neighbors of the object are far away
+
+- Reconstruction-based methods: matrix-factorization based methods and pattern-based compression methods. The normal data samples often share certain similarities
+
+# Statistical Approaches
+
+## General Idea
+
+基于given dataset来得到一个generative的model，落在low-probability region的objects就是outlier
+
+statistical approaches又可以分为两类，parametric method和nonparametric method，parametric method假设normal data object是符合一个含有有限个parameters的distribution；而nonparametric method则是基于input data来决定model
+
+## parametric method
+
+假设data服从某个distribution，然后使用该distribution来计算所有data的likelihood，如果过低的话，那么就是outlier
+
+## nonparametric method
+
+用已有的dataset来训练model，然后再将需要判断的data输入到model中进行判断
+
+比如为已知的dataset画出histogram然后得到每个value出现的可能性，然后根据这个可能性和某个function去计算outlier score，如果score较高，那么就是outlier
+
+## Pros and Cons
+
+优点是outlier detection may be statistically justifiable，缺点是有些model的计算量较大，对于高维的data效果不好
+
+# Proximity-based Approaches
+
+这种方式是通过检测data points之间有多相似进行outlier detection，如果一个point与大多数其他的data points都不太相似，那么就被认为是outlier
+
+proximity-based methods可以分为两类，distance-based和densitybased
+
+## Distance-based
+
+这种方式主要考虑各个points之间的距离，如果一个point没有engough nearby points，那么就是outlier
+
+nearby由distance threshold r决定，enough有fraction threshold Π决定
+
+首先count在distance r范围内的points，如果count小于Π*total points的值，那么就是outlier
+
+最直接的方式是计算每一个point与其他所有points的距离，但是这种方式的计算量十分大，不过在实际应用中，这种方式并没有想象中的那么耗时，因为对每个point的计算过程都可以在得知它明显不是outlier后提早停止，而大多数的data points都是这样
+
+### algorithm
+
+1. 遍历每个data points
+2. 对每个data points，计算与其他所有points之间的距离
+3. 如果在计算过程中，小于distance threshold r的neighbors数量已经不少于Π个了，那么直接标记为不是outlier，并且停止剩余的计算
+4. 如果对于一个point的计算结束了，还没有足够的neighbors，那么就标记为outlier
+
+## Distance-based vs Density-based
+
+distance-based outlier detection是着眼于整个dataset去检测outliers，这种方式检测出来的outlier被称为global outlier
+
+density-based outlier detection是基于一个更小的local area去检测outliers，这样检测出来的outlier被称为local outlier
+
+## Density-based
+
+这种方式是compare how crowded(dense) or empty(sparse) the neighborhoods are
+
+### k-Distance
+
+k-distance of o，表示为distk(o)，是data point o与其第k相近的neighbor之间的距离
+
+k-distance neighborhood，表示为Nk(o)，即与o之间的距离小于等于distk(o)的data points，由于可能有多个points与o之间的距离恰好等于distk(o)，所以k-distance neighborhood内可能有多于k个的objects
+
+### Reachability Distance
+
+it's a way to measure how far away two objects are, but it has a lower limit "k-distance"，如果actual distance比k-distance要大，那么使用actual distance
+
+对于两个objects o和o'，reachdistk(o <- o') = max{distk(o), dist(o, o')}，并且如果reachability distance不是对称的，即reachdistk(o <- o') ≠ reachdistk(o' <- o)
+
+### Local Reachiability Density
+
+简称为LRD，用于量化一个object与其最近的neighbors有多近，LRD越低，标明object与其最近的neighbors越远，那么越有可能是outlier
+
+lrd(o) = |Nk(o)| / Σreachdistk(o' <- o)，其中o'属于Nk(o)
+
+### Local Outlier Factor
+
+简称为LOF，measure how isolated an object o is relative to its neighbors，LOF通过比较object o的LRD和其他neighbors的LRDs进行计算
+
+LOF(o) = Σ(lrd(o') / lrd(o)) / |Nk(o)|，其中o'属于Nk(o)
+
+如果LOF>1，即object o is less dense than its neighbors，那么它就又可能是outlier；如果LOF=1，即object o has similar density as its neighbors，那么它是normal的，如果LOF<1，即object o is denser than its neiighbors，那么它肯定不是outlier
+
+# Isolation Forest
+
+anomalies即data characteristic与normal instance不同，大多数anomaly detection approaches都是基于normal instance建立一个model，然后将不符合这个model的data认为是anomaly。这种方式的缺点是只适合低维度和较小的dataset
+
+isolation forest，简称为iForest，是直接isolate anomalies，而不是基于normal instance建立model。这种方法不依赖于distance或者density，这样就极大的减少了计算量，所以复杂度是linear time complexity，并且memory requirement很低，而且对于较大和高维的dataset效果较好
+
+iForest假设anomalies are the minority and consist of fewer instances，并且anomaies have attribute values that significantly different from normal instance
+
+## Basic Idea
+
+construct a unsupervised decision tree which randomly partition the sample space with binary split until every single distance is isolated. Call this tree as iTree
+
+由于anomalies与normal instance比起来更加isolated，所以它们会更加靠近root，而normal points会出现在deeper end
+
+然后基于不同的samples去构建更多的iTree，这些iTrees组成iForest，计算每个data point的average oath length，并且赋予一个anomaly score，得分高的points就是outlier
+
+## Basic Algorithm
+
+1. 随机选择一个feature，然后用一个随机的value进行split
+2. 重复这个步骤，建立一个tree
+3. 计算每个data point的path length
+4. 在建立很多个trees后，计算average path length，并且assign anomaly scores
+
+iForest的几个key parameters是
+1. n_estimators：trees的数量
+2. max_samples：建立每个tree所用到的samples数量
+3. contamination：proportion of expected anomalies
+
+## Features
+
+每个tree的建立都是通过randomly sample来得到subset作为dataset，这样会增加diversity to the model
+
+每个sample dataset中的data points都是不放回的从full dataset中选中的，即一旦一个data point被selected，那么它不会再出现在其他的sample dataset中了
+
+这种sample的方法减小了每个tree的size，making the process computationalyy efficient，并且由于某些anomalies在更小的sample中可能会更突出，使效果更好
+
+# Clustering-based Approaches
+
+## Clustering-based vs Classification-based
+
+clustering-base是unsupervised methods，并且是基于data objects和clusters之间的关系进行判断，outliers属于small or remote clusters or none at all
+
+classification-based是supervised methods，treat outlier detection as a classification problem，通过labeled data来训练模型，然后使用模型对outliers和normal data进行区分
+
+## Three Clustering-based Approaches
+
+### approach 1
+
+如果一个data object不属于任何cluster，那么它是outlier
+
+可以使用DBSCAN
+
+### approach 2
+
+如果一个data object与其最近的cluster之间的距离很大，那么它是outlier
+
+通常使用k-means clustering，每个data points都有一个outlier-ness score，dist(o, Co) / l，其中Co是该cluster的center，l是该cluster中所有data points到center距离的平均值，score越高，那么越有可能是outlier
+
+### approach 3
+
+如果一个data object属于一个small or sparse cluster，那么这个small cluster的所有data objects都是outlier
+
+前面两个approaches都是通过compare individual data point to larger data clusters one by one，在large dataset中，一些outliers可能不是isolated，而是会形成它们自己的small clusters
+
+FindCBLOF algorithm就是这个approach的一个实现
+
+#### FindCBLOF
+
+1. 首先将所有clusters以size排列为descending order，一个threshold α作为区分large和small clusters的参考，如果cluster中的data points数量大于dataset中objects数的α%，那么就是large，否则是small
+2. 然后assign CBLOF scores
+    - 对于large clusters中的data points，CBLOF score = (size of cluster) × (similarity between the point and the cluster)，即cluster中data points的数量与similarity的乘积
+    - 对于small clusters中的data points，CBLOF score = (size of cluster) × (similarity between the point and the closest large cluster)，即cluster中data points的数量与最近的large cluster的similarity的乘积
+3. 最后基于CBLOF score判断outliers，score越低的越有可能是outlier，因为这种points要么是在一个small cluster中，要么与其最近的large cluster距离很远
+
+## Pros and Cons
+
+clustering-based outlier detection approaches的优点是unsupervised，对很多种data types都有效，并且速度较快；缺点是依赖于所使用的clustering method，并且对于large dataset，计算量较高

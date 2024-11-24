@@ -462,3 +462,391 @@ key也可以是一个字典形式的map，来指定不同的index被分到哪一
 也可以传递一个python function作为key，将会以index作为input然后执行传入的python function，再进行group和aggregation等操作
 
 也可以将以上的这些key的选择结合起来，然后会得到一个multi index的结果
+
+# Introduction To Matplotlib
+
+matplotlib是基于numpy array，并且work with broader scipy stack，matplotlib最重要的一个feature是它在许多operating systems and graphics backends上工作的很好
+
+matplotlib中的pyplot，简称plt，这个interface是最常用的
+
+如果在script中使用matplotlib，那么就需要调用plt.show，这个function的功能是open one or more interavtive windows to display all currently active Figure objects。plt.show在每个python session中应该只使用一次，并且通常在script的结尾使用，multiple show会造成unpredictable behavior
+
+如果在ipython shell中使用matplotlib，需要使用%matplotlib这条指令去进入matplotlib mode。使用这条指令后，plt command会打开一个figure window，并且further commands会在plot中update，但是有一些操作不会draw automatically，需要用plt.draw去force，plt.show在matplotlib mode中不是必需的
+
+如果在jupyter notebook中使用matplotlib，同样需要使用%matplotlib命令，并且可以specify，如果是%matplotlib inline，将会embed static images，如果是%matplotlib notebook，则会embed interactive plot
+
+matplotlib有两种interfaces，一种是convenient MATLAB-style state-based interface，另一种是powerful object-oriented interface
+
+## MATLAB-style Interface
+
+matplotlib最初是为MATLAB用户编写的，让python也可以作图，所有的MATLAB-style tools都包含在pyplot(plt)中
+
+这种情况下，interface是stateful的，it keeps track of the current figure and axe，一旦建立了second figure，如果要再对first figure进行修改就会clunky
+
+## Object-oriented Interface
+
+这种interface适用于更加复杂的情况，相较于依赖active figure or axe这种notion，object-oriented interface的plotting function会explicit create Figure and Axes objects
+
+# Simple Line Plots
+
+在matplotlib中，figure is and instance of the class plt.Figure，即一个canvas，而axes is an instance of the class plt.Axes，是subplot，在object-oriented interface中，如果需要画subplot，就需要explicitly创建axes
+
+如果要画多条lines，只需要多次调用plt.plot即可，并且可以指定参数color来调整颜色，指定linestyle来调整线的style
+
+可以使用plt.xlim()和plt.ylim()function去调整两个轴的上下限；使用plt.axis()去调整轴的style；还可以使用plt.title()，plt.xlabel()和plt.ylabel()去调整整个图的title和两个轴的label；如果一个图中有多个数据，可以在plt.plot中指定每个数据的label，然后用plt.legend()标出
+
+大多数的plt function都会translate directly to ax methods，比如plt.plot -> ax.plot，但是不是所有的commands都是这样，尤其是set limits, labels and titles，相较于call these functions individually，更常用的是使用ax.set()，可以set all properties at once
+
+# Simple Scatter Plots
+
+除了-和--来specify draw line plots，还可以用其他的keywords去指定画出不同的dots，circle或者其他shape，还可以将-和o结合起来用，绘制出带有dot的line plot
+
+除了generally使用plt.plot，并指定shape去绘制scatter plot，还可以直接调用plt.scatter。plt.scatter与plt.plot最主要的区别是，properties of each individual points can be individually controlled or mapped to data，比如调整color和size，这样可以通过color和size去convey information，这实际上是变相的增加了信息维度，而plt.plot不行，它只能对整体进行调整
+
+不过对于较大的datasets来说，plt.plot的效率比plt.scatter要高很多，原因就是plt.scatter可以对每个point进行individually的调整，而plt.plot是保证所有point都是一样的，所以the work of determining the appearance of the points in done only once
+
+# Errorbars
+
+## Basic Errorbars
+
+可以用plt.errorbar()去create a basic errorbar，参数fmt用来control the appearance，除此之外，还有很多其他的参数可以customize the errorbar plot
+
+## Countinuous Errors
+
+matplotlib没有built-in的function去创建errorbars on countinuous quantities
+
+可以用plt.fill_between()来实现countinuous errorbar的效果
+
+# Density and Contour Plot
+
+可以用plt.contour去创建一个contour plot，其中有三个基本参数，x, y, z，x和y对应着在plot中的位置，z对应着contour levels，还可以指定参数cmap，用colormap更好的展现第三个维度
+
+如果觉得plot的留白会distracting，可以使用plt.contourf去创建filled contour plot，参数和plt.contour一样
+
+可以额外使用plt.colorbar()，如果需要add information with labeled color，这样可以区分出peak和valley
+
+如果觉得discrete的颜色不够美观，可以用plt.imshow to generate a smooth representation
+
+# Histograms and Binnings
+
+histogram和bar plot的区别是，histogram可以展现一种数据的distribution
+
+可以直接用plt.hist()去创建一个histogram
+
+如果想创建二维的histogram，也可以直接用plt.hist2d()function，然后用plt.colorbar()去标注count
+
+如果想创建一个更加美观的二维histogram，可以使用plt.hexbin()去创建一个grid为六边形的2d hist，参数和plt.hist2d()一样
+
+# Customizing Legends
+
+legends assign meaning to the various plot elements，最简单的创建legend的方式是直接使用plt.legend()，可以通过指定参数loc来改变legend的位置，ncol来改变number of columns，还有很多其他的参数来指定appearance
+
+默认情况下legend会包含所有labeled elements，如果只需要绘制出某些数据的legend，可以向plt.legend()中传递参数，指定绘制需要的labels。不过更清晰的方式是多次调用plt.plot()，一条条的绘制出每一个需要label的data
+
+# Customizing Colorbars
+
+legend identify discrete labels，而对于continuous labels，labeled colorbar can be a great tool
+
+availabel colormaps都在plt.cm namespace中，选择合适的colormap是非常subtle的
+
+有三种类型的colormaps
+
+- sequential colormaps：these are made up of one continuous sequence of colors，这种cmap的range是even brightness，所以information是连续的
+- divergent colormaps：these contain two distinct colors，这种cmap由于是dual-color，所以可以展现出positive and negative deviations
+- qualitative colormaps：these mix colors with no particular sequence，这种cmap的范围很大，但是是uneven brightness，可能会emphasize unimportant information
+
+colorbar自身实际上是an instance of plt.Axes，所以可以对其做出很多变化，比如如果有很多noise影响的plot，可以指定参数extend来扩展color的范围，使其更加清晰
+
+colormap默认情况是continuous的，但是也可以指定为discrete，通过plt.cm.get_cmap()function实现
+
+# Multiple Subplots
+
+subplot其实就是axes，创建一个axes最基础的方式是plt.axes()function，其接受一个optional argument of list，这个list中的4个值分别是left, bottom, width和height，从bottom left到top right的range是0到1
+
+在object-oriented interface中，plt.axes的equivalent是fig.add_axes()
+
+对于MATLAB interface，则是通过plt.subplot()，并指定subplot的row和column，从左上角到右下角依次编号实现
+
+plt.subplots()相较于MATLAB interface中的plt.subplot()，多了一个s，这个function可以一次性创建多个subplots
+
+to go beyond a regular grid of subplots，可以使用plt.GridSpec()，这种方式创建出来的figure，可以进行slicing，从而令一个subplot使用多个subplots所占据的空间
+
+# Categories of Data Visualization
+
+there are five categories of plots: Comparison, Sequence, Distribution, Relationship, Part-whole
+
+## Comparison
+
+### Bar charts
+
+bars can lie horizontally or vertically, the length or height of the rectangular bars depict the value of the data, this chart can easily compare the values
+
+### Paired bar(a variation of bar charts)
+
+if you want to show comparisons within categories, you can specify another bar under the same variable
+
+for example, to compare the number of people of each country, you can specically compare the number of men and women, which means divide whole people into two parts
+
+### Stacked bar(a variation of bar charts)
+
+paired bar chart shows two or more data values for each category, but it subdivides the data within each category
+
+with stacked bar, you still have one bar under each category like simple bar chart, but you use some way like differnet color to sign the different subgroup
+
+the drawback of this kind of chart is it can be difficult to compare the different value of the segments within the chart, because they don't start in the same endpoint
+
+### Dot Plot(a variation of bar charts)
+
+it likes paired bar, but use dot to specify the value, and use a line to connect two or more subgroups to show the difference between each subgroup under each category
+
+### Heatmap
+
+it uses colors and color saturations to represent data values, it often used to visulize data when patterns and frequency are more important than exact data
+
+because it adds another dimension, so it can compare both across and within categories
+
+## Sequence
+
+### Line Chart
+
+data values are connected by lines to show values in a sequence, this kind of chart helps with the detection of trends and patterns
+
+there isn't limitation of the number of sequences you can include in a single line chart, so the final chart is comprehensive
+
+### Area chart & Stacked Area chart
+
+area chart is line graph with the area below the line filled in, giving the series more visual weight
+
+stakced area chart can show the whole data in one chart rahter than showing independently
+
+there are two options, stack on the total sum or percentage
+
+## Distribution
+
+### Histogram
+
+it's a specific kind of bar chart that presents the frequency of data
+
+the difference between bar chart and histogram is, the two axis in bar chart represent counts and categories, but in histogram, the graph focus on the data of one category, one axis represents the different values of category, another axis means the counts of each value
+
+### Histogram with Error bars
+
+it's not a strict histogram, because it's still a bar chart, but with error bar, it can tell the distribution information of data
+
+### Box-and-Whisker plot
+
+box plot in short, it shows the median, Q1 and Q3, two whiskers end at two extream, and you can tell the outliers throught this plot
+
+you can place the box plots of each category together like a bar chart, which can tell more information
+
+### Violin chart
+
+an element of violin chart is the transverse shape of distribution, then place them into one chart, you can compare each category and see the distribution of them
+
+### Strip plot
+
+it likes the bar chart, but rather than use a rectangle(bar), this graph plots the data points in a line, then user can see the distribution
+
+some data points in strip plots can become obscured because it's too dense, so you can use different colors or place them separatly
+
+### Higher dimension
+
+heatmap can be used to visualize 2 dimension, also called 2d histogram
+
+## Relationship
+
+### Scatter plot
+
+it's the most common way to visualize the correlations between two variables
+
+### Bubble plot
+
+it can be called bubble scatter plot by varying the size of the circles according to a third variable, which add the dimension to the representation
+
+### Correlation matrix
+
+the matrix list the correlation coefficien between each category
+
+with numbers, it would be hard to tell the relationship, but you can use color density or sized shape to reveal the patterns
+
+### Tree diagrams
+
+tree diagrams show levels of hierarchy
+
+## Part-to-whole
+
+### Pie charts
+
+it indicates how a whole consists of parts through slice of a pie
+
+### Treemap
+
+it uses tree structure
+
+# Data Cleaning
+
+perfect data对应的是一组数据，满足
+1. 每一行都是一个unique的instance
+2. 每一列都表示一个single的变量
+3. 每一个值都应该是complete, valid, correct
+
+imperfect data会导致一系列可能的问题，而data cleaning就是the process of reducing the imperfections of imperfect data
+
+对于data cleaning，一共有五个topics：duplicate instances, compound variables, missing data, data validation和data correctness
+
+## Duplicate instances
+
+duplicates会alter the distribution of variables，尽管duplicates不一定是harmful的
+
+duplicate的impact取决于
+1. 哪些records是duplicated
+2. duplication有多频繁
+3. 具体的task
+
+有时duplicity是非常subtle的，比如，如果data是从不同的来源得到的，那么这些不同的来源可能会将相同的数据以不同的measurement来记载，尽管它们看上去不是明显的相似，但是实际上是duplicate；有时一些application还会将超过boundary的值记为相同的
+
+在一些dataset中会有identifier，可能会出现重复项的identifier不同这种情况
+
+definition of duplicity can be extended，比如一些非常相近的值可以被视作duplicate
+
+## Compound variables
+
+compound variable是一个实际上包含多个变量的单个变量，这种variable既可以是incohesive的，比如由于输入错误，将两个值输入到一个变量中；也可以是cohesive的，比如将年月日储存在一个变量作为日期
+
+user可以通过observation, domain knowledge, metadata和experts来identify incohesive compound variables
+
+对于cohesive compound variables，可以根据task的需求和feedback from task来决定是否需要split
+
+通常情况下是将compound variable转换为string type，便于处理
+
+## Missing data
+
+对于missing data，没有统一的处理方式，因为：不同的软件有不同的表示missing value的方式；不同的missing value也包含了不同的信息
+
+由于representation的多样，所以treatment应该做到
+1. 能够识别出dataset中的representation of missing data
+2. 知道target environment是如何represent missing data的
+3. 保证treatment process的integrity
+
+user可以通过textual queries或者visualization来对missing data有一定的认知。textual，比如missing values的数量、有1个或n个missing values的data instance的数量、哪些variables含有missing values；visualization，可以直观的展示出各个variables的missing values的distribution
+
+一个missing value既可以是legitimate，比如在survey中允许不回答问题；也可以是illegitimate，比如跳过了必答题
+
+不同的missingness所对应的treatment也不同，有如下三种mechanism
+1. Structural deficiencies：missing是一个定义过的value，即允许missing的存在，并且有对应的表达方式
+2. Random occurrences：以下任何一个子类都是
+    - Missig completely at random(MCAR)：任何一个data point的value是missing的likelihood都是相同的
+    - Missing at random：likelihood不同
+    - difficult to distinguish
+3. Specific causes：也叫做not missing at random(NMAR)，即missing不是根据概率随机的，而是有一定原因导致的
+
+### Treatment
+
+#### Ignoring
+
+ignore missing value既可能是necessary的，比如missingness是meaningful的；也可能是advisable的，比如在较大的dataset中只有很少一部分legitimate missing values；还有可能是harmful的，比如dataset具有severe missingness
+
+#### Deletion
+
+有两种delete方式，listwise deletion，将data instance给删掉；和variable deletion，如果某个variable的missingness非常严重，那么可以直接将这个variable去掉
+
+在实际应用中，data instances一般比variables更重要，所以应当优先保留data instance
+
+deletion的优点是简便，不需要大量的计算
+
+缺点是可能因为删除掉legitimate missing values导致信息丢失；对于MCAR的data，missingness不是biased，删除的数据可能会很多；当dataset的数据较小时，deletion可能是harmful的；如果missingness非常严重，删除可能导致sample效果较差，得到poor result
+
+#### Imputation
+
+这种方式根据non-missing values相互之间的relationship来为missing values提供一个estimate来填补空缺，通常用在illegitimate missing data上
+
+imputation可以分为两大类
+1. Parameterized：imputation technique去猜测variable的distribution
+    - Mean substitution：基于一个variable
+    - Linear imputations：基于多个variables
+    - Maximum likelihood：multivariate
+    - Expectation-Maximization：multivariate
+    - Multiple Imputation：multivariate
+2. Non-parameterized：imputation techniques不对missing values作任何assumption of distribution
+    - Non-parametric Multiple Imputation：multivariate
+    - Machine Learning：multivariate
+
+##### mean substitution
+
+这种方式直接将missing value用该variable的mean替代，也可以extend为median或者mode
+
+优点是方便快捷，计算量小，但是缺点是存在bias，并且如果variance较高或者data不是MCAR，表现通常不佳，尤其是MNAR的情况
+
+##### multiple imputation
+
+简称为MI，主要思想是最小化bias
+
+主要过程就是通过多种不同的imputation方式，得到多个imputed dataset，然后将这些dataset通过某些方式合并，得到最终的结果
+
+由于imputation不仅基于原本的data，也基于生成多个imputed dataset的random process，所以极大的消除了bias
+
+MI的优点是对MCAR和MAR的效果非常好，并且在某些情况下，对MNAR的效果也不错
+
+缺点是计算量非常大，并且要用多少个imputed dataset，要如何将它们合并也是需要user自行决定的
+
+##### Machine Learning techniques
+
+machine learning imputation，简称为MLI
+
+由于ML主要用在预测target variable上，这对于missing value来说也是一样的，MLI通常不需要search for an underlying distribution，下面以kNNI为例
+
+当impute a value for variable V时，kNNI计算与具有缺失值的instance最相似的k个data instance，并且这些instance都必须是complete的
+
+然后，kNNI基于这k个data instance，以central tendency of the values of V来impute missing value
+
+kNNI的优点是对于不是特别大的dataset时，计算量较小，并且可以用在MCAR和MAR的data上。但是对于较大的dataset，计算量很大，并且依赖于complete data instance，还对outlier敏感
+
+## Data Validation
+
+data validation是一个确保data满足某些certain assumption的过程，这个过程主要基于validation rules，这是一些statements，既包含一些general knwoledge，对于不同用途的数据还有特定的domain knowledge
+
+## Data Correctness
+
+data correctness意味着value与它被预期的representation相同
+
+character of data是基于recorded instance所得到的，correct data表示values符合其character，而那些不符合的称为nonconforming instance或者extreme instance或者anomaly
+
+识别出nonconforming instance的过程通常称为outlier detection。如果outlier is weak or less extreme的话，这种outlier称为noise
+
+outliers既可以是harmful的，比如会影响到真实的pattern等；也可以是useful的，比如outlier是我们需要的target
+
+outlier可能的source有：收集数据时产生的错误，外部因素，sample不当，transform造成的，或者其他难以解释的原因
+
+### Categorization of Outliers
+
+基于不同的standpoint，可以将outliers分为不同的类别
+
+基于number of data instance，可以将outlier分为point outliers，即单个data point就是outlier，或者collective outliers，即单个data point不是outlier，但是多个points在一起就是一群outliers
+
+基于context，在一定的条件下，一些data points被认为时outliers，但是在其他的条件下，它们又不是outliers
+
+基于scope of comparison，outlier可以被分为local outlier和global outlier，local outlier是与其最近的neighbors比较起来是outlier，global outlier是与整个dataset比起来都是outlier
+
+基于variables可以分为univariate和multivariate，univariate是基于一个variable决定的，而multivariate是基于多个variables
+
+### Approaches for Outlier Detection
+
+#### Nearest Neighbor
+
+这种方式是假设normal data instance are closer to their neighbors，从而形成一个dense neighborhood，而outliers是远离这些neighbors的
+
+有两种主要的方式，一个是kNN，即计算k个最邻近的距离，然后划分radius，如果超过一个threshold的话就是outlier；另一个是pre-specified radius，即user自行决定neighborhood的半径，如果该半径的neighborhood内没有足够的data points，那么该data point就是outlier
+
+#### Clustering-Based
+
+这种方法假设normal data属于某个large and dense clusters，而outliers属于small或sparse clusters，或者不属于任何clusters
+
+### Handling of Harmful Outliers
+
+对于harmful outliers有如下几种处理方式
+
+1. removal：这种方法简单直接，但是会reduce sample size并且introduce bias or information loss，从而skew the results
+
+2. outlier robust data-oriented solutions：即使用对outliers不敏感的算法来完成task，不对outliers进行处理
+
+3. correction：可以通过transformation将outlier fold为normal instance，但是这种方法不保证一定有效，并且transforme后的data可能会变得难以去interpret；或者使用expert knowledge去modify the unrealistic values，即直接对不满意的data instance进行directly manipulate，不过这样可能会introduce bias

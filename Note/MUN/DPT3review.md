@@ -1,0 +1,149 @@
+#
+
+matplotlib中的pyplot，简称plt，这个interface是最常用的
+
+在script中使用matplotlib，需要调用plt.show()，这个method是打开一个或多个交互窗口来显示目前所有活跃的figure objects，这个method通常只在结尾使用一次
+
+在ipython shell和jupyter notebook中，需要使用%matplotlib这个指令去进入matplotlib mode，这条指令会让plt command自动打开一个figure window，并且往后的commands都会自动update，但是有一些操作不会，需要手动使用plt.draw()。在notebook中还可以specify inline或者notebook，分别是specify静态或动态图
+
+matplotlib有两种interfaces，一种是convenient MATLAB-style state-based interface，另一种是powerful object-oriented interface
+
+matplotlib最初是为MATLAB用户编写的，让python也可以便于作图，所有的MATLAB-style tools都包含在pyplot(plt)中。这种情况下interface是stateful的，即自动建立每新建一个figure对象，那么所有的操作都是作用在这个figure对象上的
+
+对于object-oriented interface，适用于更加复杂的情况，这种interface需要explicit create figure和axes objects
+
+这两种interface最主要的区别是，MATLAB interface不会创建对象，而是直接通过函数进行操作，所有的实例都由函数自行创建，不需要users管理，而object-oriented interface是首先创建figure和axes对象，然后对不同的对象explicit进行操作
+
+纯MATLAB interface是通过plt.subplot()建立figure和axes，而object-oriented interface是通过plt.subplots()，这里函数的区别是末尾的s，plt.subplots()会返回一个figure和一个axes数组
+
+大多数的plt methods都会直接转换为ax methods，但不是所有的commands都这样，尤其是进行set时，所以更常用的是使用ax.set()函数，可以直接调整所有properties
+
+最基础的作图函数是plot()函数，可以作出点和线
+
+如果想作scatter plot，可以使用plt.scatter()函数，这个函数最主要的特性是，可以individually去管理每个data point，而plot()函数只能进行generally control，所有操作都是对整个dataset进行的。但是对于较大的dataset来说，plot()函数的效率比scatter()高很多，也是因为scatter()的特性，它需要对每个data point进行独立的创建，会将setting操作做很多遍
+
+可以使用plt.errorbar()函数去创建一个basic errorbar，如果想创建一个continuous的errorbar，matplotlib是没有内置的函数的，但是可以通过plt.fill_between()来实现这种效果
+
+plt.contour()可以建立contour plot，这样创建出来的basic plot只有lines，可以通过cmap去添上颜色，更好的展现levels。plt.contourf()会将lines去掉，并且用颜色填满整个plot
+
+可以通过plt.colorbar()去额外创建colorbar，可以表现出color对应的levels的高低
+
+plt.hist()函数可以创建histogram，如果想创建二维的histogram，可以使用plt.hist2d()函数或者plt.hexbin()函数，前者是用正方形，后者画出的是六边形，更加美观
+
+legend可以标明图中每个元素的意义，最简单的创建方式就是plt.legend()函数，默认情况下legend()函数会将所有的labels绘制出来，尽管可以通过传递参数进行指定，但是更合理的方式是单独绘制每一个需要被label的data
+
+legend可以标识出discrete的labels，对于continuous的labels，通常会使用labeled colorbar，colorbar最重要的一个属性是colormap，有三种类型的colormaps
+
+- sequential colormaps：这种colormap是基于一个色系，它的灰度是连续的，即从暗到明
+- divergent colormaps：这种colormap选用两种相反的色系位于两端，所以灰度是暗到明再到暗，可以展现出正负关系
+- qualitative colormaps：这种colormap是mix的，范围很大，但是灰度是不确定的，是uneven的，所以可能会凸显出不重要的信息
+
+colormap实际上是一个axes，所以可以对其做出很多变化，比如指定extend参数来扩展color的范围，使信息更加清晰。默认情况下colorbar使continuous的，但是也可以指定为discrete
+
+subplot其实就是axes，可以通过plt.axes()来创建一个axes，这是MATLAB interface的创建方法，在object-oriented interface中，可以通过对figure对象调用add_axes()函数来添加axes
+
+#
+
+对于数据可视化，总共有5种类型的plots，Comparison, Sequence, Distribution, Relationship和Part-to-Whole
+
+在Comparison这个类别中，最基础的图形是bar chart，这种图是对不同个体中的同一个变量进行比较
+
+paired bar则是再将同一个变量进行细分，这样可以对同一个个体的同一个变量进行一些简单的比较，比如将人数细分为男性和女性
+
+由于paired bar将一个个体的某个变量给分为几个不同的parts，所以就不方便进行不同个体之间该变量整体的比较，stacked bar则是以basic bar chart为基础，用不同的标识来在整体上进行细分，这样既可以保留各个个体之间整体数量的比较，又可以看出来在同一个个体中细分的类别之间的关系，不过这样的缺点就是不能在各个个体之间进行细分类别的比较，因为起始点不是相同的
+
+dot plot也是bar chart的变种，它跟paired bar相似，可以进行同一个个体内的类别细分，不过是放在同一水平线上用dot表示，然后将该个体的各个类别用线连起来，这样便于表示差值
+
+heat map则是用颜色深浅度增加了一个维度，这样可以对比不同个体之间不同类别的值，这种图通常是用在确切数值不太重要的场景下
+
+在Sequence这个类别中，最基础的plot是line chart，这种图将数据点绘制出来后，用一条线将它们连起来，可以展现出trends和patterns，并且这种图没有对数据数量的限制，可以在同一个plot中绘制多条lines
+
+area chart则是只能绘制一条，因为它将line覆盖的范围填充起来，使其更加visual weight，而stacked area chart则是可以绘制多条，因为它将所有lines的values堆叠起来，可以绘制成各个data的absolute values，也可以绘制成在总量中占的百分比
+
+在Distribution这个类别中，最常用的plot就是histogram，它与bar chart很相似，区别在于，bar chart是对比一个变量在不同个体之间value的区别，而histogram是展现出一个变量在一个个体内的分布
+
+histogram with error bar这种图其实并不是histogram，因为它就是bar chart加上了error bar，只是因为这种表现方式可以展现出一定的distribution信息
+
+box plot中间的箱体就是Q3-Q1，两端的hinges是max和min，默认情况下超过max(min)±(1.5*IQR)的就被视为outlier，可以将box plot旋转90度，然后将多个个体的box plots放在一起，可以展现出更多信息
+
+violin chart与上面的多个box plots转置后放在一起对比的思想是相同的，不过每个个体的violin是其histogram
+
+strip plot与bar chart很像，但是不是用bar，而是将每个个体的所有数据点给直接点上去，这样就可以看出来distribution，如果数据点过多，图变得看不清了，可以将其错开
+
+对于2维的distribution，可以使用heat map
+
+在Relationship这个类别中，最常用的plot是scatter plot
+
+bubble plot跟scatter plot很相似，但是每个数据点的大小不同，这样实际上增加了一个维度，所以可以增加一种信息
+
+correlation matrix就是将每个个体之间在一个变量下的correlation coefficient做成matrix，但是如果数据量较大，那么用数字表示的话就很难看出关系，所以可以像bubble plot一样，用不同大小的circle表示，甚至还可以通过不同的颜色在添加信息
+
+tree diagram就是通过树状图来表现从属关系，像思维导图一样
+
+在Part-to-Whole这个类别中，最常用的就是pie chart，既可以展现不同个体同一变量的实际values，也可以展现所占比例
+
+treemap则是类似pie chart，但是使用了树状结构
+
+#
+
+perfect data要满足
+1. 每一行都是一个unique的instance
+2. 每一列都表示一个single的变量
+3. 每一个值都应该是complete, valid, correct
+
+data cleaning就是为了减少imperfect data中的imperfections
+
+data cleaning，一共有五个topics：duplicate instances, compound variables, missing data, data validation和data correctness
+
+对于duplicate instances，就是要去除掉duplication，而由于data来源不同，所以可能measurement不同，导致它们看上去不相似，但是实际上是duplicates；一些dataset会有identifier，但是可能出现重复项的id不同；还可以extend definition of duplicity，比如非常相近的value可以被视为duplicate
+
+对于compound variables，它是一个本应该只有一个value，却因为某些原因储存了多个value的变量，这种compound variable既可以是incohesive的，比如由于输入错误，将两个值输入到一个变量中；也可以是cohesive的，比如将年月日储存在一个变量作为日期
+
+incohesive的compound一定需要进行处理，而cohesive的则是根据需求来决定是否需要split，通常情况下是将compound variable转换为string type，便于处理
+
+对于missing data，由于不同的表示方式等等因素，没有一个统一的处理方式，不过treatment至少需要满足以下几点
+1. 能够识别出dataset中的representation of missing data
+2. 知道target environment是如何represent missing data的
+3. 保证treatment process的integrity
+
+具体的处理方式有如下几种
+
+ignoring，直接忽略掉missing，这样其实就是不做任何处理，可能是necessary的，比如missingness是meaningful的，或者较大的dataset中只有一小部分missing，还有可能是harmful的，比如missingness太严重了，直接ignore会严重影响task
+
+deletion，有两种delete方式，一是将data instance给删掉，二是将variable给删掉。实际应用中会优先保留data instance
+
+deletion的优点是简便，不需要大量计算，但是缺点是可能删掉legitimate missing values导致信息丢失；对于MCAR的dataset，missingness不是biased，所以删掉的数据可能很多
+
+imputation，可以分为parameterized，对是会对variable的distribution作某种假设，和non-parameterized，不对missing values的distribution作任何假设
+
+parameterized method中，一个较为简便的方法是mean substitution，这种方式直接将missing value用该variable的mean替代，也可以根据需要extend为median或者mode，不过这种方式存在bias
+
+另一种对各种类型的missing效果都较好的parameterized method是multiple imputation，目的就是最小化bias，主要过程是通过多种不同的imputation方式，得到多个imputed dataset，然后通过某些方式进行合并得到最终的imputed结果
+
+这种imputation生成中间过程的imputed dataset时，选用的impute方法是随机的，所以可以消除bias，但是缺点是计算量非常大，并且要用多少个imputed dataset，要如何将它们合并也是需要user自行决定的
+
+non-parameterized method中，machine learning imputation较为常用，由于ML是用于预测target variable，这与missing value imputation的目的是一样的
+
+MLI中常用的算法是kNNI，即找到与需要impute的instance最近的k个instances，用这k个instances的mean进行impute。kNNI的优点是对于不是特别大的dataset的计算量较小，但是对于较大的dataset的计算量很大，并且要求k个data instances是completed的，而且这种方法还对outlier敏感
+
+对于data validation，就是确保data满足某些certain assumption，这个过程主要基于validation rules，这些rules就是一些statements，既包含一些general knowledge，又对不同用途的数据有着特定的domain knowledge
+
+对于data correctness，就是找出那些与期望的representation不符的数据后对其进行处理，找出这些data instance的过程称为outlier detection，特别地，如果outlier is weak or less extreme的话，称其为noise
+
+基于number of data instance，可以将outlier分为point outliers，或者collective outliers；基于context，在一定的条件下，一些data points被认为时outliers，但是在其他的条件下，它们又不是outliers；基于scope of comparison，outlier可以被分为local outlier和global outlier；基于variables可以分为univariate和multivariate，univariate是基于一个variable决定的，而multivariate是基于多个variables
+
+outlier detection methods有如下两类
+
+nearest neighbor，这种方式是假设normal data instance are closer to their neighbors，从而形成一个dense neighborhood，而outliers是远离这些neighbors的
+
+有两种主要的方式，一个是kNN，即计算k个最邻近的距离，然后通过某些measurement得到一个distance，如果这个distance超过某个threshold的话就是outlier；另一个是pre-specified radius，即user自行决定neighborhood的半径，如果该半径的neighborhood内没有足够的data points，那么该data point就是outlier
+
+clustering-based，这种方式是假设normal data属于某个large and dense clusters，而outliers属于small或sparse clusters，或者不属于任何clusters
+
+对于harmful outliers有如下几种处理方式
+
+1. removal：这种方法简单直接，但是会reduce sample size并且introduce bias or information loss，从而skew the results
+
+2. outlier robust data-oriented solutions：即使用对outliers不敏感的算法来完成task，不对outliers进行处理
+
+3. correction：可以通过transformation将outlier fold为normal instance，但是这种方法不保证一定有效，并且transforme后的data可能会变得难以去interpret；或者使用expert knowledge去modify the unrealistic values，即直接对不满意的data instance进行directly manipulate，不过这样可能会introduce bias
