@@ -255,7 +255,7 @@ isolation forest，简称为iForest。大多数anomaly detection approaches都�
 2. max_samples：建立每个tree所用到的samples数量
 3. contamination：proportion of expected anomalies
 
-由于每个tree的建立都是通过randomly sample来得到subset作为dataset，这样会增加diversity to the model，并且每个sample dataset中的data points都是不放回的从full dataset中选中的，即一旦一个data point被selected，那么它不会再出现在其他的sample dataset中了。这种sample的方法减小了每个tree的size，making the process computationalyy efficient，并且由于某些anomalies在更小的sample中可能会更突出，使效果更好
+由于每个tree的建立都是通过randomly sample来得到subset作为dataset，这样会增加diversity to the model，并且每个sample dataset中的data points都是不放回的从full dataset中选中的，这个不放回是指在一个sample中，即任何一个sample的data points都是unique的，而不是在所有sample中不放回，不是说这个data point被选中过一次后，就不会出现在其他的tree里了。这种sample的方法减小了每个tree的size，making the process computationalyy efficient，并且由于某些anomalies在更小的sample中可能会更突出，使效果更好
 
 clustering-based methods是unsupervised，假设outliers属于small or remote clusters or none at all。有以下三种方法
 
