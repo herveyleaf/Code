@@ -876,3 +876,39 @@ FindCBLOF algorithm就是这个approach的一个实现
 ## Pros and Cons
 
 clustering-based outlier detection approaches的优点是unsupervised，对很多种data types都有效，并且速度较快；缺点是依赖于所使用的clustering method，并且对于large dataset，计算量较高
+
+# Mining Contexual outilers
+
+## Transforming Contextual Outlier Detection to Conventional Outlier Detection
+
+这种方法适用于contexts can be clearly identified
+
+仅有非常简单的两步
+1. 通过contextual attributes去identify the context
+2. 在context下通过conventional outlier detection methods去计算outlier-ness score进行判断
+
+context的granularity(粒度) can vary，比如board：age group and town；detailed：age, postal code, number of transactions per year
+
+这种方法存在的问题是sparse contexts，即data的context attributes的值可能非常sparse，让evaluation unreliable
+
+解决方法是generalize the context，即让有着similar noraml behaviors的groups合并为一个group，broaden context，这种解决方法叫做mixture models
+
+mixture models会进行两种clustering，根据contextual attributes的cluster结果为U，根据behavioral attributes的cluster结果为V。然后根据probability和两种clustering结果进行outlier score的计算
+
+Mixture Models的步骤如下：
+1. Creating Clusters Based on Two Types of Attributes：Mixture Model U是根据contextual attributes的cluster结果；Mixture Model V是根据behavioral attributes的cluster结果
+2. Linking the Two Types of Clusters：通过计算p(Vi|Uj)，即Cluster Uj属于Cluster Vi的概率
+3. Combining information about Contextual clusters and Behavioral Clusters：计算outlier score S(o)，S(o) = ∑p(o∈Uj)∑p(o∈Vi)p(Vi|Uj)，即data point o属于Uj的概率乘o属于Vi的概率再乘p(Vi|Uj)
+
+## Modeling Normal Behavior with Respect to Contexts
+
+在某些情况下，我们很难对context进行准确的定义，比如基于浏览记录对用户进行分析，要追溯到多久之前的记录来进行判断是个问题
+
+对于这种情况，可以基于contextual attributes去训练一个model来对behavior进行预测，然后将context和behavior通过modeling给link起来，这样可以避免explicit context definition manually；然后通过model对待判断的data的contextual attributes进行判断，如果actual behavior与model的预测差别较大，那么就是contextual outlier
+
+步骤如下
+1. Train a Predictive Model：用labeled data去训练model
+2. Apply the Method：用model对data进行预测
+3. Detect Outliers：比较actual behavior和predicted probabilities，如果差距较大的话就是outlier
+
+这种方法的优点就是避免manually define the context；model会dynamically learn去adapt不同的要求

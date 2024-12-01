@@ -196,7 +196,7 @@ DBSCAN的步骤如下：
     - 如果p是outlier，将其标记，不归到任何cluster中
 4. 重复以上步骤，直到所有points都被访问过
 
-outlier detection和clustering高度相关但是不同，clustering是找到dataset中的majority patterns，而outlier detection是找exceptional cases；outlier detection可能是supervised，而outlier detection通常是unsupervised
+outlier detection和clustering高度相关但是不同，clustering是找到dataset中的majority patterns，而outlier detection是找exceptional cases；outlier detection可能是supervised，而clustering通常是unsupervised
 
 outlier是与大部分objects差异很大的points，而noise相对来说差异没有那么大
 
