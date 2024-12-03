@@ -273,3 +273,20 @@ approach 3，如果一个data object属于一个small or sparse cluster，那么
 3. 最后基于CBLOF score判断outliers，score越低的越有可能是outlier，因为这种points要么是在一个small cluster中，要么与其最近的large cluster距离很远
 
 clustering-based outlier detection approaches的优点是unsupervised，对很多种data types都有效，并且速度较快；缺点是依赖于所使用的clustering method，并且对于large dataset，计算量较高
+
+对于contextual outliers，有两种情况
+
+如果context可以很清晰的被identify，那么就可以通过传统的outlier detection methods去计算outlierness score进行判断，但是这种方式存在的问题是如果data instance的context是sparse的，那么可能没有足够的data instance去判断其是否为outlier，所以需要generalize context，这种方法被称为mixture models，步骤如下：
+
+1. Creating Clusters Based on Two Types of Attributes：Mixture Model U是根据contextual attributes的cluster结果；Mixture Model V是根据behavioral attributes的cluster结果
+2. Linking the Two Types of Clusters：通过计算p(Vi|Uj)，即Cluster Uj属于Cluster Vi的概率
+3. Combining information about Contextual clusters and Behavioral Clusters：计算outlier score S(o)，S(o) = ∑p(o∈Uj)∑p(o∈Vi)p(Vi|Uj)，即data point o属于Uj的概率乘o属于Vi的概率再乘p(Vi|Uj)
+
+如果context难以被定义，比如基于浏览记录对用户进行分析，要追溯到多久之前的记录来进行判断是个问题。对于这种情况，可以基于contextual attributes去训练一个model来对behavior进行预测，然后将context和behavior通过modeling给link起来，这样可以避免explicit context definition manually；然后通过model对待判断的data的contextual attributes进行判断，如果actual behavior与model的预测差别较大，那么就是contextual outlier
+
+步骤如下：
+1. Train a Predictive Model：用labeled data去训练model
+2. Apply the Method：用model对data进行预测
+3. Detect Outliers：比较actual behavior和predicted probabilities，如果差距较大的话就是outlier
+
+这种方法的优点就是避免manually define the context；model会dynamically learn去adapt不同的要求
